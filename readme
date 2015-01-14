@@ -10,3 +10,5 @@ m = number of knots
 h is a 1 x numberOFCurves(cells) array containing the number of straight segments to break each curve into
 
 options is a struct containing flags for doing things like lifting the surface, or further subdividing the curve.
+
+lifting the curve is creating a layer of curvilinear triangles at the interior of the boundary, in order to feed the remaining polygon to the external mesh generator.  
