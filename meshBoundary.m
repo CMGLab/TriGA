@@ -9,6 +9,8 @@ function [bNode,bEdge,node,bflag] = meshBoundary(P, KV,n_el,options)
 % array of these nodes(bEdge). These are for passing to a third party mesh
 % generator to mesh the interior volume that's away from the edges.
 
+% This function is effectively Bezier extraction
+
 
 % Inputs:
 % P = control points of the nurbs curve
@@ -25,7 +27,7 @@ function [bNode,bEdge,node,bflag] = meshBoundary(P, KV,n_el,options)
 m = length(KV);
 % number of control points:
 n = size(P,1);
-% From the relation: m = n+p+1:
+% From the relation: m = n+p+1: --> 
 p = m-n-1;
 
 % Normalize the knot vector:
@@ -115,7 +117,7 @@ end
 P(:,1) = P(:,1).*P(:,3);
 P(:,2) = P(:,2).*P(:,3);
 
-% Knot Interstion:
+% Knot Insertion:
 % We know what we want our final knot vector to look like, so we'll do knot
 % insertion until our KV matches our KVF.
 for i = 1:length(KVF)
