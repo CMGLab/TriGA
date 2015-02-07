@@ -1,4 +1,11 @@
-function [R, dR_dx, J_det, dR_dxi, J] = tri10(xi,eta,node)
+function [R, dR_dx,x, J_det] = tri10(xi,eta,node,varargin)
+
+if nargin == 3
+    rational = true;
+elseif nargin == 4
+    rational = varargin{1};
+end
+
 %----------------------------------------tri10---------------------------------%
 % TRI10 is the finite element subroutine for a 10 node triangular element. It
 % takes as inputs the control net of the triangle in physical space, B and the
@@ -32,9 +39,11 @@ w = detA3/detA;
 
 % Initializing variables
 dx_dxi = zeros(2);
+N = zeros(nen,1);
 R = zeros(nen,1);
 dR_dxi = zeros(nen,2);
 dR_du = zeros(nen,3);
+dN_du = zeros(nen,3);
 du_dxi = [-1 -1; 1 0;0 1];
 
 % Index and tuples. The index is the location in the control net (row,col) of
@@ -61,31 +70,59 @@ for nn = 1:nen
     
     % From page 141 of Bezier and B-splines. Calculate the ith basis function
     % its derivative with respect to barycentric coordinates.
-    R(nn) = factorial(n)/...
+    N(nn) = factorial(n)/...
         (factorial(i)*factorial(j)*factorial(k))*u^i*v^j*w^k;
     
     if i-1 < 0
-        dR_du(nn,1) =0;
+        dN_du(nn,1) =0;
     else
-        dR_du(nn,1) = n * factorial(n-1)/...
+        dN_du(nn,1) = n * factorial(n-1)/...
             (factorial(i-1)*factorial(j)*factorial(k))*u^(i-1)*v^j*w^k;
     end
     
     if j-1 < 0
-        dR_du(nn,2) = 0;
+        dN_du(nn,2) = 0;
     else
-        dR_du(nn,2) = n * factorial(n-1)/...
+        dN_du(nn,2) = n * factorial(n-1)/...
             (factorial(i)*factorial(j-1)*factorial(k))*u^(i)*v^(j-1)*w^k;
     end
     
     if k-1 < 0;
-        dR_du(nn,3) = 0;
+        dN_du(nn,3) = 0;
     else
-        dR_du(nn,3) = n * factorial(n-1)/...
+        dN_du(nn,3) = n * factorial(n-1)/...
             (factorial(i)*factorial(j)*factorial(k-1))*u^i*v^j*w^(k-1);
     end
     
 end
+
+
+if rational   
+    den  = N'*node(:,3);
+    for nn = 1:nen
+        R(nn) = N(nn)*node(nn,3) / den;
+        
+        dR_du(nn,1) =  (dN_du(nn,1)*node(nn,3)*den - ...
+            dN_du(:,1)'*node(:,3)*N(nn)*node(nn,3))/den^2;
+        dR_du(nn,2) =  (dN_du(nn,2)*node(nn,3)*den - ...
+            dN_du(:,2)'*node(:,3)*N(nn)*node(nn,3))/den^2;
+        dR_du(nn,3) =  (dN_du(nn,3)*node(nn,3)*den - ...
+            dN_du(:,3)'*node(:,3)*N(nn)*node(nn,3))/den^2;
+    end
+else
+    R = N;
+    dR_du = dN_du;
+end
+
+
+num = 0;
+den = 0;
+for i = 1:nen
+    num = num +N(i)*node(i,1:2)*node(i,3);
+    den = den +N(i)*node(i,3);
+    
+end
+x = num/den;
 
 % Chain rule to find the derivative with respect to cartesian isoparametric
 % coordinates.

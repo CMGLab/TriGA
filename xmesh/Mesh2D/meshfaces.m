@@ -109,7 +109,7 @@ try
    elseif (nargin>5)
       error('Wrong number of inputs');
    end
-   if (nargout>5)
+   if (nargout>4)
       error('Wrong number of outputs');
    end
 
@@ -137,12 +137,8 @@ tic
 t_quad = toc;
 
 % Discretise edges
+pbnd = boundarynodes(qtree.p,qtree.t,qtree.h,node,edge,options.output);
 
-if options.split
-    pbnd = boundarynodes(qtree.p,qtree.t,qtree.h,node,edge,options.output);
-else
-    pbnd = node;
-end
 % Mesh each face separately
 p = []; t = []; fnum = [];
 for k = 1:length(face)
@@ -202,13 +198,11 @@ p = node;
 e = edge;
 i = mytsearch(ph(:,1),ph(:,2),th,p(:,1),p(:,2));               
 h = tinterp(ph,th,hh,p,i);
-nSplit = zeros(length(h),1);
 
 if output
    fprintf('Placing Boundary Nodes\n');
 end
 iter = 1;
-
 while true
    
    % Edge length
@@ -219,7 +213,6 @@ while true
    % Split long edges
    ratio = L./he;
    split = (ratio>=1.5);
-
    if any(split)
       % Split edge at midpoint
       n1 = e(split,1);
@@ -231,15 +224,11 @@ while true
       e = [e; n3,n2];
       p = [p; pm];
       % Size function at new nodes
-      disp('tshearch')
       i = mytsearch(ph(:,1),ph(:,2),th,pm(:,1),pm(:,2));               
       h = [h; tinterp(ph,th,hh,pm,i)];
-      
-      % Figure out how many times the orginal edges have been split
    else
       break
    end
-   clc
    iter = iter+1;
 end
 

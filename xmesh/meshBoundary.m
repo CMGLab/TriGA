@@ -1,4 +1,4 @@
-function [bNode,bEdge,node,bflag] = meshBoundary(P, KV,n_el,options)
+function [bNode, BFLAG] = meshBoundary(P, KV,bflag,kvloc)
 %---------------------------------meshBoundary---------------------------------%
 % This funciton meshes the boundaries of the domain. It takes as an input a
 % NURBS curve ( in the form of its control points and knot vector) and a
@@ -20,52 +20,78 @@ function [bNode,bEdge,node,bflag] = meshBoundary(P, KV,n_el,options)
 % B: a 1 x 2*nel cell of control nets
 
 % node:
-%------------------------------------------------------------------------------%
 
+ctr = 1;
+nCurves = numel(P);
+for cc = 1:nCurves
+    kvtmp = kvloc(kvloc>=cc-1 & kvloc<=cc)-(cc-1);
+    [bNodeTemp,bflagTemp] = extractCurves(P{cc}, KV{cc},kvtmp);   
+    bNode(ctr:ctr+numel(bNodeTemp)-1) = bNodeTemp;
+
+    for ii = 1:length(bflagTemp)
+        BFLAG(ctr+ii-1) = bflag{cc}(bflagTemp(ii),2);
+    end
+    
+    ctr = ctr + numel(bNodeTemp);
+end
+
+
+return
+
+function [node, bflag] = extractCurves(P,KV,kvloc)
+%------------------------------------------------------------------------------%
 % Calculate the degree of the inputed Nurbs curve:
 % number of knots:
 m = length(KV);
 % number of control points:
 n = size(P,1);
-% From the relation: m = n+p+1: --> 
+% From the relation: m = n+p+1: -->
 p = m-n-1;
 
 % Normalize the knot vector:
 KV = KV/KV(end);
 
-% Save a copy of the original
+% Save a copy of the original knot vector
 KV0 = KV;
+
 % Initialize variables:
-bNode = zeros(n_el,2);
+n_el = length(unique(kvloc)) - 1;
 bEdge = zeros(n_el,2);
 
 a = zeros(length(P),1);
 Q = zeros(size(P));
 
-% Based on the number of elements wanted along the boundary, calculate the
-% desired final knot vector:
 
-if  p == 1
-    n_el = size(P,1)-1;
-    bNode = P(1:end-1,1:2);
-    for ee = 1:n_el
-        bEdge(ee,:) = [ee,ee+1];
-    end
-    
-    bEdge(end,2) = 1;
-    
-elseif p == 2
+%                      BUILDING TARGET KNOT VECTORS
+%-------------------------------------------------------------------------%
+% Based on the location that we want knots along the final bounary (kvloc)
+% build the final knot vector.
+if p ==1
     % Calculate the number of control points along the curve:
-    nP = n_el*2+1;
-    nKV = nP + p +1;
-    
-    % Assume equal spacing of elements along the curve. Functionality for
-    % weighted element sizing can be added later. Calculate the location of
-    % the knots:
-    kvLoc = 0:1/n_el:1;
+    nKV = (length(kvloc)-2) + 4;
     
     % Initialize the desired final knot vector:
     KVF = zeros(1,nKV);
+    
+    % The knot at 0 will have multiplicity 3, so don't change the first
+    % three entries of KVF. The knot at the end will also have multiplicity
+    % three, change the last three entries to 1.
+    KVF(nKV-p:nKV) = [1 1];
+    
+    % The middle knots will all have multiplicity of 2, so loop through and
+    % assign the rest of the knots
+    ctr = 3;
+    for kk = 2:length(kvloc)-1
+        KVF(ctr)   = kvloc(kk);
+        ctr = ctr+1;
+    end    
+elseif p == 2
+    % Calculate the number of control points along the curve:
+    nKV = (length(kvloc)-2)*2 + 6;
+    
+    % Initialize the desired final knot vector:
+    KVF = zeros(1,nKV);
+    
     % The knot at 0 will have multiplicity 3, so don't change the first
     % three entries of KVF. The knot at the end will also have multiplicity
     % three, change the last three entries to 1.
@@ -74,20 +100,15 @@ elseif p == 2
     % The middle knots will all have multiplicity of 2, so loop through and
     % assign the rest of the knots
     ctr = 4;
-    for iKV = 2:length(kvLoc)-1
-        KVF(ctr)   = kvLoc(iKV);
-        KVF(ctr+1) = kvLoc(iKV);
+    for kk = 2:length(kvloc)-1
+        KVF(ctr)   = kvloc(kk);
+        KVF(ctr+1) = kvloc(kk);
         ctr = ctr+2;
     end
     
 elseif p == 3
     % Calculate the number of control points along the curve:
-    nP = n_el*3+1;
-    nKV = nP + p +1;
-    % Assume equal spacing of elements along the curve. Functionality for
-    % weighted element sizing can be added later. Calculate the location of
-    % the knots:
-    kvLoc = 0:1/n_el:1;
+    nKV = (length(kvloc)-2)*3 + 8;
     
     % Initialize the desired final knot vector:
     KVF = zeros(1,nKV);
@@ -100,10 +121,10 @@ elseif p == 3
     % The middle knots will all have multiplicity of 3, so loop through and
     % assign the rest of the knots
     ctr = 5;
-    for iKV = 2:length(kvLoc)-1
-        KVF(ctr)   = kvLoc(iKV);
-        KVF(ctr+1) = kvLoc(iKV);
-        KVF(ctr+2) = kvLoc(iKV);
+    for kk = 2:length(kvloc)-1
+        KVF(ctr)   = kvloc(kk);
+        KVF(ctr+1) = kvloc(kk);
+        KVF(ctr+2) = kvloc(kk);
         ctr = ctr+3;
     end
     
@@ -112,6 +133,8 @@ else
     return
 end
 
+%                            KNOT INSTERTION
+%-------------------------------------------------------------------------%
 % Convert the NURBS curve to a 4D b-spline by multipling all the control
 % points by their respective weights.
 P(:,1) = P(:,1).*P(:,3);
@@ -154,8 +177,46 @@ for i = 1:length(KVF)
     end
 end
 
+
+%                          DEGREE ELEVATION
+%-------------------------------------------------------------------------%
 % If the inputted curve was quadratic, do degree elevation to get a cubic curve.
-if p==2
+if p==1
+    for pp = 1:2
+    clear Q
+    ctr1 = 1;
+    ctr2 = 1;
+    for e = 1:n_el
+        [Q(ctr1:ctr1+p+1,:),pe] = elevateDegree(P(ctr2:ctr2+p,:),p);
+        ctr1 = ctr1+p+1;
+        ctr2 = ctr2+p;
+    end
+    
+    
+    P = Q;
+    p  = pe;
+    
+    kvloc = unique(KV);
+    nKV = length(P)+p+1;
+    % Go in and change the knot vector.
+    % Initialize the desired final knot vector:
+    KVe = zeros(1,nKV);
+    
+    % The first knot will have multiplicity of 4, so don't change the first
+    % four entries. The last knot will also have multiplicity of 4, so
+    % assign the last four entries to 1
+    KVe(nKV-p:nKV) = ones(1,p+1);
+    
+    % The middle knots will all have multiplicity of 3, so loop through and
+    % assign the rest of the knots
+    ctr = p+1;
+    for kk = 2:length(kvloc)-1
+        KVe(ctr:ctr+p-1)   = kvloc(kk);
+        ctr = ctr+p;
+    end
+    KV = KVe;
+    end
+elseif p==2
     clear Q
     ctr1 = 1;
     ctr2 = 1;
@@ -169,7 +230,7 @@ if p==2
     P = Q;
     p  = pe;
     
-    kvLoc = unique(KV);
+    kvloc = unique(KV);
     nKV = length(P)+p+1;
     % Go in and change the knot vector.
     % Initialize the desired final knot vector:
@@ -183,77 +244,68 @@ if p==2
     % The middle knots will all have multiplicity of 3, so loop through and
     % assign the rest of the knots
     ctr = 5;
-    for iKV = 2:length(kvLoc)-1
-        KVe(ctr)   = kvLoc(iKV);
-        KVe(ctr+1) = kvLoc(iKV);
-        KVe(ctr+2) = kvLoc(iKV);
+    for kk = 2:length(kvloc)-1
+        KVe(ctr)   = kvloc(kk);
+        KVe(ctr+1) = kvloc(kk);
+        KVe(ctr+2) = kvloc(kk);
         ctr = ctr+3;
     end
+    KV = KVe;
 end
+%-------------------------------------------------------------------------%
+%                         END DEGREE ELEVATION
 
 % Now that the knot insertion is done, renormalize all the control points
 % by their respective weights to get a NURBS description again.
 P(:,1) = P(:,1)./P(:,3);
 P(:,2) = P(:,2)./P(:,3);
+%-------------------------------------------------------------------------%
+%                         END KNOT INSTERTION
 
 
-if options.lift
-    % Loop through all the boundary control points just created and make a
-    % triangular mesh layer.
-    ctr = 1;
-    for n = 1:n_el
-        bPts = P(ctr:ctr+3,:);
-        [node{n}] = gen_netb(bPts);
-        ctr = ctr+3;
-    end
-    
-    % fill in between the triangles that have an edge on the boundary
-    % with more triangles.
-    for n = 1:n_el
-        % Add the third node of the current triangle to the boundary node array
-        bNode(n,:) = node{n}(3,1:2);
-    end
-    
-    for i = 1:n_el-1
-        vert = [node{i}(1,:);node{i}(3,:);node{i+1}(3,:)];
-        [node{n_el+i}] = gen_net(vert);
-    end
-    
-    % Connect the last element to the first element.
-    vert = [node{n_el}(1,:);node{n_el}(3,:);node{1}(3,:)];
-    [node{n_el*2}] = gen_net(vert);
-    
-    % Finally, generate the bEdge connectivity array.
-    for i = 1:n_el-1
-        bEdge(i,:) = [i, i+1];
-    end
-    bEdge(n_el,:) = [n_el, 1];
-    
-else
-    
-    bb = 1:3:length(P);
-    bNode = P(bb(1:end-1),1:2);
-    for ee = 1:n_el
-        bEdge(ee,:) = [ee,ee+1];
-        node{ee} = P(bb(ee):bb(ee+1),:);
-    end
-    
-    bEdge(end,2) = 1;
-    
-    % Findout which knot span of the original knot vector each element lies
-    % on
-    KV0 = unique(KV0);
-    KVF = unique(KVe);
-    bb = zeros(n_el,1);
-    for kk = 2:length(KV0)
-        bb(kk) = sum(KVF>KV0(kk-1) & KVF<KV0(kk))+1;
-        bsum = cumsum(bb);    
-        bflag(bsum(kk-1)+1:bsum(kk),1) = ones(bb(kk),1)*(kk-1);
-    end
-    
-    
 
-    
+
+bb = 1:3:length(P);
+bNode = P(bb(1:end-1),1:2);
+for ee = 1:n_el
+    bEdge(ee,:) = [ee,ee+1];
+    node{ee} = P(bb(ee):bb(ee+1),:);
+end
+
+bEdge(end,2) = 1;
+
+% Find out which knot span of the original knot vector each element lies
+% on
+KV0 = unique(KV0);
+KVF = unique(KV);
+bb = zeros(n_el,1);
+for kk = 2:length(KV0)
+    bb(kk) = sum(KVF>KV0(kk-1) & KVF<KV0(kk))+1;
+    bsum = cumsum(bb);
+    bflag(bsum(kk-1)+1:bsum(kk),1) = ones(bb(kk),1)*(kk-1);
+end
+
+
+return
+
+function [Pe,pe] = elevateDegree(P,p)
+
+% This function performs degree elevation on a NURBS curve of degree p. 
+% It takes as input the control points of the existing nurbs curve, P and its
+% knot vector and outputs the control points and knot vector if a degree p+1
+% NURBS curve. 
+
+
+n = size(P,1);
+
+ne = n+1;
+pe = p+1;
+
+Pe(1,:) = P(1,:);
+Pe(ne,:) = P(n,:);
+
+for i = 2:n
+    Pe(i,:) = (i-1)/(p+1)*P(i-1,:) + (1 - (i-1)/(p+1))*P(i,:);
 end
 
 return

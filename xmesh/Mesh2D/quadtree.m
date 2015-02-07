@@ -102,8 +102,7 @@ end
 % functions and add additional points where necessary.
 if ~isempty(edgeh)
    for j = 1:size(edgeh,1)
-
-       if L(edgeh(j,1))>=edgeh(j,2)
+      if L(edgeh(j,1))>=edgeh(j,2)
         
          cw = edgeh(j,1);
          r = 2.0*len(cw)/edgeh(j,2);
