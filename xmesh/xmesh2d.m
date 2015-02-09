@@ -59,11 +59,10 @@ side10 = [1 4 5 2; 2 6 7 3; 3 8 9 1];
 node = cell(length(tri),1);
 BFLAG = zeros(numel(bNode),4);
 ctr = 1;
+d = 14;
 for ee = 1:length(tri)
     vert = pts(tri(ee,:),:);
-    node{ee} = gen_net(vert);
-    showNodes(node{ee})
-    
+    node{ee} = round(gen_net(vert)*10^d)/10^d;    
     %Check to see if the current triangle is a boundary triangle.
     for bb = 1:numel(bNode)
         for ss = 1:3

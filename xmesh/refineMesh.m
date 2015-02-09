@@ -1,18 +1,18 @@
 function [NODE4,IEN4,BFLAG4] = refineMesh(filename)
 
-% Reading in the data file. 
+% Reading in the data file.
 [NODE,IEN, BFLAG] = gambitFileIn(filename);
 
-% Setting global mesh data. 
+% Setting global mesh data.
 nel = size(IEN,2);
 ctr = 0;
-
+ctr1 = 0;
 % Initializing refined mesh variables.
 node4 = cell(1,nel*4);
 BFLAG4 = zeros(length(BFLAG)*4,4);
 
 
-% Loop over the elements in the mesh/ 
+% Loop over the elements in the mesh/
 for ee = 1:nel
     
     % Generate the local node array, and perform uniform refinement using
@@ -20,32 +20,38 @@ for ee = 1:nel
     node = NODE(IEN(:,ee),:);
     tempNode = refineTriangle(node);
     for nn = 1:4
-        node4{ctr+nn} = tempNode{nn};
+        node4{ctr1+nn} = tempNode{nn};
     end
     
-    % Update the boundary condution matrix.
+    % Update the boundary condition matrix.
     temp  = BFLAG(BFLAG(:,1)==ee,:);
     for bb = 1:size(temp,1)
-    
+        
         if temp(bb,2) == 1
-            BFLAG4(ctr+1,:) = [ctr+1 temp(bb,2:4)];
-            BFLAG4(ctr+2,:) = [ctr+2 temp(bb,2:4)];
+            BFLAG4(ctr+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
+            BFLAG4(ctr+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
+            ctr = ctr+2;
+            
         end
         
         if temp(bb,2) == 2
-            BFLAG4(ctr+2,:) = [ctr+2 temp(bb,2:4)];
-            BFLAG4(ctr+3,:) = [ctr+3 temp(bb,2:4)];
+            BFLAG4(ctr+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
+            BFLAG4(ctr+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
+            ctr = ctr+2;
+            
         end
         
         if temp(bb,2) == 3
-            BFLAG4(ctr+1,:) = [ctr+1 temp(bb,2:4)];
-            BFLAG4(ctr+3,:) = [ctr+3 temp(bb,2:4)];
+            BFLAG4(ctr+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
+            BFLAG4(ctr+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
+            ctr = ctr+2;
+            
         end
     end
-    ctr = ctr+4;
+    ctr1 = ctr1 +4;
 end
 
-% Generate the global NODE and IEN arrays from the local node arrays. 
+% Generate the global NODE and IEN arrays from the local node arrays.
 [NODE4,IEN4] = gen_arrays(node4);
 
 % Write out a gambit file
@@ -59,7 +65,7 @@ function node4 = refineTriangle(node)
 
 nen = size(node,1);
 
-% Transforming the control points to projective space. 
+% Transforming the control points to projective space.
 node3D(:,1) = node(:,1).*node(:,3);
 node3D(:,2) = node(:,2).*node(:,3);
 node3D(:,3) = node(:,3);
@@ -106,7 +112,7 @@ x3 = R\Rhat3*node3D;
 x4 = R\Rhat4*node3D;
 
 
-% Converting back from projective space to physical space. 
+% Converting back from projective space to physical space.
 x1(:,1) = x1(:,1)./x1(:,3);
 x1(:,2) = x1(:,2)./x1(:,3);
 x2(:,1) = x2(:,1)./x2(:,3);

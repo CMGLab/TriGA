@@ -263,13 +263,13 @@ P(:,2) = P(:,2)./P(:,3);
 %                         END KNOT INSTERTION
 
 
-
+d = 14;
 
 bb = 1:3:length(P);
 bNode = P(bb(1:end-1),1:2);
 for ee = 1:n_el
     bEdge(ee,:) = [ee,ee+1];
-    node{ee} = P(bb(ee):bb(ee+1),:);
+    node{ee} = round(P(bb(ee):bb(ee+1),:)*10^d)/10^d;
 end
 
 bEdge(end,2) = 1;

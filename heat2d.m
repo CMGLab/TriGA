@@ -61,8 +61,6 @@ nNodes = length(NODE);
 [qPts, qPtsb, W, Wb] = quadData(28);
 nQuad   = length(W);
 nbQuad  = length(Wb);
-Wt = W/2;
-
 
 % 2D FEA Sovler
 % Data initalization. Set global stiffness and forcing matrices to 0.
@@ -97,8 +95,8 @@ for ee =1:nel
         
         % Add the contribution of the current quad point to the local element
         % stiffness and forcing matrices.
-        k = k + Wt(nq)*dR_dx*D*dR_dx'*J_det;
-        f = f + Wt(nq)*heatGen(x(1),x(2))*R*J_det;
+        k = k + W(nq)*dR_dx*D*dR_dx'*J_det;
+        f = f + W(nq)*heatGen(x(1),x(2))*R*J_det;
     end
     
     % Neumann BCs
