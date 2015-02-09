@@ -48,11 +48,11 @@ end
 
 line = fgetl(Fid); line = fgetl(Fid);
 
-% boundary codes (defined in Globals2D)
 BFLAG = zeros(K,4);
 
 % Read all the boundary conditions at the nodes
 group =1;
+ctr = 1;
 while  line ~= -1 & ~strcmp(line(1:8),'TIMESTEP')
     bcprop = sscanf(line, '%s %u %u %u %u');
     bcprop = bcprop(end-3:end);
@@ -60,8 +60,9 @@ while  line ~= -1 & ~strcmp(line(1:8),'TIMESTEP')
     TYPE = bcprop(4);
     for bb = 1:NBELEM
         line = fgetl(Fid);
-        belem = sscanf(line,'%u');
-        BFLAG(belem(1),:) = [belem(1),belem(3),group,TYPE];
+        belem = sscanf(line,'%u');      
+        BFLAG(ctr,:) = [belem(1),belem(3),group,TYPE];
+        ctr = ctr+1;
     end
     group = group+1;
     line = fgetl(Fid); line = fgetl(Fid); line = fgetl(Fid);

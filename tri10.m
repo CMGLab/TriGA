@@ -127,6 +127,7 @@ x = num/den;
 % Chain rule to find the derivative with respect to cartesian isoparametric
 % coordinates.
 dR_dxi = dR_du*du_dxi;
+dN_dxi = dN_du*du_dxi;
 
 % Calculating the mapping from isoparametric space to physical space.
 
@@ -138,10 +139,10 @@ hp = [0 0; 0 0 ];
 for row  = 1:2
     for col = 1:2
         for nn = 1:nen
-            g(row,col) = g(row,col) + R(nn)*node(nn,row)*node(nn,3);
-            h(row,col) = h(row,col) + R(nn)*node(nn,3);
-            gp(row,col) = gp(row,col) + dR_dxi(nn,col)*node(nn,row)*node(nn,3);
-            hp(row,col) = hp(row,col) + dR_dxi(nn,col)*node(nn,3);
+            g(row,col) = g(row,col) + N(nn)*node(nn,row)*node(nn,3);
+            h(row,col) = h(row,col) + N(nn)*node(nn,3);
+            gp(row,col) = gp(row,col) + dN_dxi(nn,col)*node(nn,row)*node(nn,3);
+            hp(row,col) = hp(row,col) + dN_dxi(nn,col)*node(nn,3);
         end
     end
     

@@ -62,6 +62,7 @@ ctr = 1;
 for ee = 1:length(tri)
     vert = pts(tri(ee,:),:);
     node{ee} = gen_net(vert);
+    showNodes(node{ee})
     
     %Check to see if the current triangle is a boundary triangle.
     for bb = 1:numel(bNode)

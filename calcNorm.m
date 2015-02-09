@@ -1,4 +1,3 @@
-
 function [L2, H1, elemL2,elemL2Rel] =calcNorm(filename,func,gradFunc)
 % ---------------------------------------------------------------------------- %
 
@@ -57,7 +56,7 @@ for ee = 1:nel
 
     end
     elemL2(ee) = L2square;
-    elemL2Rel(ee) = L2square*detJ/(sumU/nQuad);
+    elemL2Rel(ee) = L2square/detJ/(sumU/nQuad);
 
 
     L2 = L2 + L2square;

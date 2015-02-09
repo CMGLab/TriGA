@@ -17,7 +17,7 @@ close all
 
 addpath('xmesh')
 addpath('xmesh/Mesh2D')
-filename = 'plateandhole';
+filename = 'plate';
 xmesh2d(filename);
 
 % Define the function for the manufactured solution.
@@ -28,7 +28,8 @@ gradPhi = @(x,y) [(x*(-4+y)*(4+y)*(3*x^2-2*(8-y^2+sqrt(x^2+y^2))))/sqrt(x^2+y^2)
 heatGen = @(x,y)  -(2 *x^4+x^2 *(13 *y^2-2 *(sqrt(x^2+y^2)+72))+2 *(-y^2 *(sqrt(x^2+y^2)+72)+32 *(sqrt(x^2+y^2)+4)+y^4))/sqrt(x^2+y^2);
 
 
-[NODE,IEN,temp] = heat2d(filename,heatGen,[0 0 0]);
+
+[NODE,IEN,temp] = heat2d(filename,heatGen,[0 0]);
 
 showResults(filename)
 

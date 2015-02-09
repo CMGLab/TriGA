@@ -43,7 +43,7 @@ for dd = 1:length(delem)
     addtempBound = [IEN(side10(ss,:),ee),ones(4,1)*BC(delem(dd,3))];
     tempBounds =[tempBounds;addtempBound]; %#ok<AGROW>
 end
-unique(tempBounds,'rows');
+tempBounds = unique(tempBounds,'rows');
 
 boundTemp = tempBounds(:,2);
 tempBounds =tempBounds(:,1);
