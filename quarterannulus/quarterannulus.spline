@@ -1,0 +1,28 @@
+HEADER
+NCURVES	NSD
+1 		2
+NCP 	LKV	p
+9	7	1 
+CONTROL POINTS
+    0   1   1
+    0   1.5 1
+    0   2 	1
+    -2 	2 	0.707106781186548
+    -2  0  	1
+    -1.5 0  1
+    -1 	0 	1
+    -1  1   0.707106781186548
+    0  1  1
+KNOT VECTOR
+0 0 0 .25 .25 .5 .5  .75 .75 1 1 1
+BOUNDARY FLAGS
+1	1   
+2	2   
+3	1   
+4	3  
+BOUNDARY CONDITIONS
+NBOUNDS
+3
+1	7
+2   6
+3   7

@@ -1,54 +1,60 @@
 function [NODE4,IEN4,BFLAG4] = refineMesh(filename)
+%------------------------------refineMesh---------------------------------%
+% REFINEMESH This function performs mesh refinement by uniform subdivision 
+% of the triangles in the mesh.
+%
+% INPUT:
+% filename: The filename of a gambit neutral file containing the mesh
+% information.
+%
+% OUTPUT:
+% NODE4: The global node list of the refined mesh. 
+%
+% IEN4 : THe connectivity information for the refined mesh. 
+%
+% BFLAG4: The Boundary condition information for the refined mesh. 
+%
+% filenameref: refineMesh also writes out all the above information to a
+% new gambit neutral file with "ref" appended to the filename. 
+%-------------------------------------------------------------------------%
 
 % Reading in the data file.
 [NODE,IEN, BFLAG] = gambitFileIn(filename);
 
 % Setting global mesh data.
 nel = size(IEN,2);
-ctr = 0;
-ctr1 = 0;
+
 % Initializing refined mesh variables.
 node4 = cell(1,nel*4);
-BFLAG4 = zeros(length(BFLAG)*4,4);
+BFLAG4 = zeros(length(BFLAG)*2,4);
 
-
-% Loop over the elements in the mesh/
+% Loop over the elements in the mesh.
 for ee = 1:nel
     
     % Generate the local node array, and perform uniform refinement using
     % refine Triange.
     node = NODE(IEN(:,ee),:);
-    tempNode = refineTriangle(node);
-    for nn = 1:4
-        node4{ctr1+nn} = tempNode{nn};
-    end
-    
+    node4(4*(ee-1)+(1:4)) = refineTriangle(node);
+
     % Update the boundary condition matrix.
     temp  = BFLAG(BFLAG(:,1)==ee,:);
     for bb = 1:size(temp,1)
         
         if temp(bb,2) == 1
-            BFLAG4(ctr+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
-            BFLAG4(ctr+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
-            ctr = ctr+2;
-            
+            BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
+            BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
         end
         
         if temp(bb,2) == 2
-            BFLAG4(ctr+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
-            BFLAG4(ctr+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
-            ctr = ctr+2;
-            
+            BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
+            BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
         end
         
         if temp(bb,2) == 3
-            BFLAG4(ctr+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
-            BFLAG4(ctr+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
-            ctr = ctr+2;
-            
+            BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
+            BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
         end
     end
-    ctr1 = ctr1 +4;
 end
 
 % Generate the global NODE and IEN arrays from the local node arrays.
@@ -94,16 +100,16 @@ Rhat3 =  zeros(nen);
 Rhat4 =  zeros(nen);
 R     =  zeros(nen);
 for i = 1:10
-    Rhat1(i,:) = tri10(Xi1(i,1),Xi1(i,2))';
-    Rhat2(i,:) = tri10(Xi2(i,1),Xi2(i,2))';
-    Rhat3(i,:) = tri10(Xi3(i,1),Xi3(i,2))';
-    Rhat4(i,:) = tri10(Xi4(i,1),Xi4(i,2))';
+    Rhat1(i,:) = tri10Bern(Xi1(i,1),Xi1(i,2))';
+    Rhat2(i,:) = tri10Bern(Xi2(i,1),Xi2(i,2))';
+    Rhat3(i,:) = tri10Bern(Xi3(i,1),Xi3(i,2))';
+    Rhat4(i,:) = tri10Bern(Xi4(i,1),Xi4(i,2))';
     
 end
 
 
 for i = 1:10
-    R(i,:) = tri10(Xi(i,1),Xi(i,2))';
+    R(i,:) = tri10Bern(Xi(i,1),Xi(i,2))';
 end
 
 x1 = R\Rhat1*node3D;
@@ -131,16 +137,19 @@ node4{4} = x4;
 
 return
 
-function [R] = tri10(xi,eta)
+function [R] = tri10Bern(xi,eta)
 %----------------------------------------tri10---------------------------------%
-% TRI10 is the finite element subroutine for a 10 node triangular element. It
-% takes as inputs the control net of the triangle in physical space, B and the
-% point in isoparametric space at which to evaluate the basis functions,
-% [xi,eta]. It outputs the value of the basis function, R, its derivative with
-% respect to physical coordinates, dR_dx, and the Jacobian determinate of the
-% mapping from isoparametric space to physical space, J_det.
-
-
+% TRI10BERN calculate the bernstein polynomials over the unit triangle. 
+%
+% INPUT:
+% xi: The xi location (in parametric space) at which to evaluate the basis
+% functions.
+%
+% eta: The eta location (in parametric space) at which to evaluate the basis
+% functions.
+%
+% OUTPUT: 
+% R: A 10x1 array containing the basis functions evaluated at [xi,eta].
 %------------------------------------------------------------------------------%
 % Element parameters.
 n = 3;
@@ -169,7 +178,6 @@ R = zeros(nen,1);
 % Index and tuples. The index is the location in the control net (row,col) of
 % the ith control point. Tuples is the index in barycentric coordinates of the
 % ith control point.
-idx = [1 1; 4 1; 1 4; 2 1; 3 1; 3 2; 2 3; 1 3; 1 2; 2 2];
 tuples  = [ 3 0 0;...
     0 3 0;...
     0 0 3;...
@@ -182,8 +190,7 @@ tuples  = [ 3 0 0;...
     1 1 1];
 
 % Loop through the control points.
-for nn = 1:nen
-    
+for nn = 1:nen    
     i = tuples(nn,1);
     j = tuples(nn,2);
     k = tuples(nn,3);
@@ -191,29 +198,7 @@ for nn = 1:nen
     % From page 141 of Bezier and B-splines. Calculate the ith basis function
     % its derivative with respect to barycentric coordinates.
     R(nn) = factorial(n)/...
-        (factorial(i)*factorial(j)*factorial(k))*u^i*v^j*w^k;
-    
-    if i-1 < 0
-        dR_du(nn,1) =0;
-    else
-        dR_du(nn,1) = n * factorial(n-1)/...
-            (factorial(i-1)*factorial(j)*factorial(k))*u^(i-1)*v^j*w^k;
-    end
-    
-    if j-1 < 0
-        dR_du(nn,2) = 0;
-    else
-        dR_du(nn,2) = n * factorial(n-1)/...
-            (factorial(i)*factorial(j-1)*factorial(k))*u^(i)*v^(j-1)*w^k;
-    end
-    
-    if k-1 < 0;
-        dR_du(nn,3) = 0;
-    else
-        dR_du(nn,3) = n * factorial(n-1)/...
-            (factorial(i)*factorial(j)*factorial(k-1))*u^i*v^j*w^(k-1);
-    end
-    
+        (factorial(i)*factorial(j)*factorial(k))*u^i*v^j*w^k;    
 end
 
 return

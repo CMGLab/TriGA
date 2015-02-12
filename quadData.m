@@ -1,5 +1,25 @@
-
 function [qPts, qPtsb, W, Wb]  = quadData(n)
+% ------------------------------------------------------------------------%
+% QUADDATA: This function simply stores the quadrature points for different
+% quadrature rules. The default in TriGA is  to use a 28 point quadrature
+% rule over triangules and a 5 point quadrature rule over edges. However
+% the user can also choose to specify a 16 point or 37 point quad rule over
+% the triangle. 
+
+% INPUT: 
+% n: The number of quadrature rules to use over the triangle.
+
+% OUTPUT:
+% qPts: a nx2 array containing the quadrature points over the parent unit
+% triangle. 
+
+% qPTsb: a 1x5 array containing the quadrature points along [-1 1].
+
+% W: an nx1 array contianing the weights for the quad rule over the
+% triangle. 
+
+% Wb: a 5x1 array containing the weights for the quad rule over [-1 1].
+% ------------------------------------------------------------------------%
 
 if n == 16
     qPts = [0.0571    0.0655;...

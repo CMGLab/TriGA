@@ -1,17 +1,21 @@
 function [NODE,IEN] = xmesh2d(filename,varargin)
 %-------------------------------------------------------------------------%
-% XMESH2D stands for EXACT MESHER 2d. Given an
-% arbitrary collection of NURBS curves (up through polynomial degree  3)
-% in 2D, XMESH2d will generate a
-% higher order triangular mesh that exactly matches the inputted geometry.
-
-% Input:
-
-
-
+% XMESH2D stands for EXACT MESHER 2d. Given an arbitrary collection of
+% NURBS curves up through polynomial degree  3 in 2D, XMESH2d will generate
+% a higher order triangular mesh that exactly matches the input geometry.
+%
+% INPUT:
+% filename: The filename of a .spline file containing the curves that
+% define the problem geometry.
+%
 % Output:
-
-
+% NODE: A nNodesx3 array containing the coordinates and weights of the
+% nodes that make up the mesh.
+%
+% IEN: a 10xnel array containing the mesh connectivity information.
+%
+% filename.neu: xmesh2d also writes out the mesh information int he
+% standard gambit neu trail file format to the file <filename>.neu
 %-------------------------------------------------------------------------%
 
 if nargin == 1
@@ -21,7 +25,15 @@ elseif nargin == 2;
     options = varargin{1};
 end
 
+addpath('~/TriGA/xmesh/Mesh2D')
+addpath('./xmesh/Mesh2D')
 addpath('./Mesh2D')
+addpath('.\xmesh\Mesh2D')
+addpath('.\Mesh2D')
+addpath('..\xmesh\Mesh2D')
+addpath('..\Mesh2D')
+clc
+
 % Input Parser
 [P,KV,bflag,bc] = splineFileIn(filename);
 
@@ -30,7 +42,7 @@ thresh = 1.01;
 [node,edge,kvloc] = NURBS2poly(P,KV,thresh);
 
 % Feeding the polygons into mesh2d
-[pts,tri,kvloc] = mesh2dcurved(node,edge,P,KV,kvloc,[],options);
+[pts,tri,kvloc] = xmeshfaces(node,edge,P,KV,kvloc,[],[],options);
 
 % Go back and perform knot insertion along the boundary at the locations
 % specified by kvloc.
@@ -62,7 +74,7 @@ ctr = 1;
 d = 14;
 for ee = 1:length(tri)
     vert = pts(tri(ee,:),:);
-    node{ee} = round(gen_net(vert)*10^d)/10^d;    
+    node{ee} = round(gen_net(vert)*10^d)/10^d;
     %Check to see if the current triangle is a boundary triangle.
     for bb = 1:numel(bNode)
         for ss = 1:3
@@ -91,6 +103,60 @@ end
 
 return
 
+function [node] = gen_net(vert)
+% ----------------------------------gen_net------------------------------------%
+% Generates the control net for the current triangular Bezier patch. Reads in
+% the verticies of a triangle, and linearly interpolates the triangle to make a
+% 10 control point bezier element. 
+
+% INPUT:
+% vert: a matrix in the form [x1 y1; x2 y2; x3 y3] containing the verticies of a
+%  linear triangle, ordered counter clockwise from the bottom left vertex.
+
+%     v3
+%     | \
+%     |  \
+%     |   \
+%     |    \
+%     v1----v2
+
+% OUTPUT: 
+% node: a 10x3 array containing the control point coordinates and weights. 
+% The standard node ordering is shown below. 
+%
+%     3
+%     |\
+%     | \
+%     8  7
+%     |   \
+%     |    \
+%     9 10  6
+%     |      \
+%     |       \
+%     1--4--5--2
+%
+%------------------------------------------------------------------------------%
+
+
+node(:,1:2) = [ vert(1,1:2);...
+         vert(2,1:2);...
+         vert(3,1:2);...
+         vert(1,1:2) + (vert(2,1:2)-vert(1,1:2))/3;...
+         vert(1,1:2) + (vert(2,1:2)-vert(1,1:2))*2/3;...
+         vert(2,1:2) + (vert(3,1:2)-vert(2,1:2))/3;...
+         vert(2,1:2) + (vert(3,1:2)-vert(2,1:2))*2/3;...
+         vert(3,1:2) + (vert(1,1:2)-vert(3,1:2))/3;...
+         vert(3,1:2) + (vert(1,1:2)-vert(3,1:2))*2/3];
+            
+node(10,1:2) = node(9,1:2) + (node(6,1:2)-node(9,1:2))/2;
+if size(vert,2) ==3
+node(4:10,3) = ones(7,1);
+node(1:3,3) = vert(1:3,3);
+else
+    node(:,3) = ones(10,1);
+end
+
+return
 function [P,KV,BFLAG,BC] = splineFileIn(filename)
 
 filename = [filename,'.spline'];
@@ -106,9 +172,12 @@ line = fgetl(fileID);
 dims = sscanf(line, '%f');
 nCurves = dims(1);
 
+KV = cell(1,nCurves);
+P  = cell(1,nCurves);
+BFLAG = cell(1,nCurves);
 
 for cc = 1:nCurves
-    line = fgetl(fileID);
+    line = fgetl(fileID); %#ok<*NASGU>
     dims = fscanf(fileID,'%u');
     nCP = dims(1);
     lKV = dims(2);
@@ -133,9 +202,10 @@ for cc = 1:nCurves
     end
     
 end
-    line = fgetl(fileID);line = fgetl(fileID);line = fgetl(fileID);
-    NBC = sscanf(line, '%u');
-    
+line = fgetl(fileID);line = fgetl(fileID);line = fgetl(fileID);
+NBC = sscanf(line, '%u');
+
+BC = zeros(NBC,2);
 for bb = 1:NBC
     line = fgetl(fileID);
     BC(bb,:) = sscanf(line,'%u');

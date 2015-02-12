@@ -1,24 +1,57 @@
 function [R, dR_dx,x, J_det] = tri10(xi,eta,node,varargin)
-
+%-------------------------------------------------------------------------%
+% TRI10 is the finite element subroutine for a 10 node triangular element.
+% It uses either Rational Beziers or Bernstein Polynomials as basis
+% functions over the unit triangle . 
+%
+% INPUT:
+% xi: The xi location (in parametric space) at which to evaluate the basis
+% fucntions.
+%
+% eta: The eta location (in parametric space) at which to evaluate the basis
+% fucntions.
+%
+% node: A 10x3 array that represents the control net for a 10-node Bezier
+% triangle. The first two columns of node give the x and y coordinates of 
+% the nodes in physical space, and the last column gives their 
+% corresponding weights. Node ordering follows the convention below:
+%
+%     3
+%     |\
+%     | \
+%     8  7
+%     |   \
+%     |    \
+%     9 10  6
+%     |      \
+%     |       \
+%     1--4--5--2
+%
+% rational: (optional) If rational == true, rational bezier basis functions
+% will be used. If rational == false, Bernstein polynomial will be used. If
+% no value is specified, tri10 defaults to Rational Beziers. 
+%
+% OUTPUT: 
+% R: A 10x1 array containing the basis functions evaluated at [xi,eta].
+%
+% dR_dx: A 10x2 array containing the basis function derivatives 
+% [dR_dx, dR_dy] evaluated at [xi,eta]
+%
+% x: The [x,y] location in physical space corresponding to [xi,eta].
+%
+% J_det: The Jacobian determinant of the mapping from parametric space to
+% physical space.
+%------------------------------------------------------------------------------%
 if nargin == 3
     rational = true;
 elseif nargin == 4
     rational = varargin{1};
 end
 
-%----------------------------------------tri10---------------------------------%
-% TRI10 is the finite element subroutine for a 10 node triangular element. It
-% takes as inputs the control net of the triangle in physical space, B and the
-% point in isoparametric space at which to evaluate the basis functions,
-% [xi,eta]. It outputs the value of the basis function, R, its derivative with
-% respect to physical coordinates, dR_dx, and the Jacobian determinate of the
-% mapping from isoparametric space to physical space, J_det.
-
-
-%------------------------------------------------------------------------------%
 % Element parameters.
 n = 3;
 nen = 10;
+
 % Find the barycentric coordinates of xi and eta
 vert = [0,0;1,0;0,1];
 x1 = vert(1,1);
@@ -38,18 +71,13 @@ v = detA2/detA;
 w = detA3/detA;
 
 % Initializing variables
-dx_dxi = zeros(2);
 N = zeros(nen,1);
 R = zeros(nen,1);
-dR_dxi = zeros(nen,2);
 dR_du = zeros(nen,3);
 dN_du = zeros(nen,3);
 du_dxi = [-1 -1; 1 0;0 1];
 
-% Index and tuples. The index is the location in the control net (row,col) of
-% the ith control point. Tuples is the index in barycentric coordinates of the
-% ith control point.
-idx = [1 1; 4 1; 1 4; 2 1; 3 1; 3 2; 2 3; 1 3; 1 2; 2 2];
+% Tuples is the index in barycentric coordinates of the ith control point.
 tuples  = [ 3 0 0;...
     0 3 0;...
     0 0 3;...
@@ -95,7 +123,6 @@ for nn = 1:nen
     end
     
 end
-
 
 if rational   
     den  = N'*node(:,3);
@@ -145,16 +172,13 @@ for row  = 1:2
             hp(row,col) = hp(row,col) + dN_dxi(nn,col)*node(nn,3);
         end
     end
-    
-    
 end
 
 dx_dxi = (gp.*h-g.*hp)./(h.^2);
 
 % Calculating the shape function derivatives and the Jacobian determinate.
-dR_dx =dR_dxi*inv(dx_dxi);
+dR_dx =dR_dxi*inv(dx_dxi); %#ok<MINV>
 J_det = det(dx_dxi);
-J = dx_dxi;
 return
 
 

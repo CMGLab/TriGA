@@ -1,5 +1,12 @@
 function [] = showMesh(filename)
-
+%-------------------------------------------------------------------------%
+% SHOWMESH This function displays the mesh described by the data in
+% <filename>.neu. 
+%
+% INPUT: 
+% filename: The name of the gambt neutral file containing the mesh
+% information. 
+%-------------------------------------------------------------------------%
 
 [NODE,IEN] = gambitFileIn(filename);
 

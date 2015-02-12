@@ -1,8 +1,22 @@
-function [] = showResults(filename)
+function [] = showResults(filename,varargin)
 % -----------------------------------------------------------------------------%
-% SHOWRESULTS reads in the data from fea2d stored in 'fileName.mat' and prints a
-% heatmap of the results.
+% SHOWRESULTS This function shows the temperature results from heat2d.
+%
+% INPUT: 
+% filename: The filename of the gambit neutral file contianing the
+% temperature results for the problem
+%
+% h (optional): The level of refinement with which to visualize the
+% results. A smaller value of h means a finer visualization (but also a
+% slower viz time). If no value is specified, showResults defaults to h =
+% 1/3. 
 % -----------------------------------------------------------------------------%
+
+if nargin == 1
+    h = 1/3;
+elseif nargin == 2
+    h = varargin{1};
+end
 
 [NODE,IEN,~,temp] = gambitFileIn(filename);
 
@@ -25,7 +39,7 @@ if nen ==10
     for i = 1:nel
         clc
         fprintf('Plotting element %4.0f of %4.0f \n',[i,nel])
-        gen_patch(B{i},temp(IEN(:,i)),1/3)
+        gen_patch(B{i},temp(IEN(:,i)),h)
     end
     
 elseif nen == 3

@@ -2,12 +2,12 @@ function [NODE,IEN] = gen_arrays(node)
 %---------------------------------gen_arrays-----------------------------------%
 % GEN_ARRAYS generates the NODE and element connectivity (IEN) arrays from 
 % a cell array of local element nodes. 
-
-% Input: 
+%
+% INPUT: 
 % node: a 1xnel (number_of_elements) cell array containing the local control
 %       points for each element in the mesh. 
-
-% Output: 
+%
+% OUTPUT: 
 % NODE: a number_of_nodesx3 matrix containing the control points of the
 %       mesh. 
 % IEN: a nenxnel (number_of_element_nodes x number_of_elements) matrix
@@ -54,7 +54,7 @@ for i  = 2:length(allNodes)
     
  if round(allNodes(i,1)*10^d) == round(allNodes(i-1,1)*10^d) && ...
             round(allNodes(i,2)*10^d) == round(allNodes(i-1,2)*10^d)
-    
+        
     e0 = allNodes(i-1,4);
     n0 = allNodes(i-1,5);
      IEN(n,e) = IEN(n0,e0);

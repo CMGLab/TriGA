@@ -2,17 +2,18 @@ function [NODE,EDGE,KVLOC,BFLAG] = NURBS2poly(P,KV,thresh)
 
 %-------------------------------------------------------------------------%
 %NURBS2POLY This function approximates any number of closed NURBS curves by
-%an equal amount of polygons.
+% an equal number of polygons.
 
 % INPUTS:
 % P: 1XnCurves cell array containing the control points for each curve
 % KV: 1xnCurves cell array contianing the knot vectors for each curve.
+% thresh: A threshold for how closely the polygon must match the inputed
+% spline geometry. This is set at a default of 1.01 (the lengths of the
+% polygon and spline must be within 1% of each other).
 
 % OUTPUTS:
 % node: nPtsx2 array containing the coordinates of the polygons.
 % edge: nEdgesx2 array containing the connectivity of the polygons.
-
-
 %-------------------------------------------------------------------------%
 
 
@@ -23,49 +24,50 @@ CTR = 1;
 KVLOC = [];
 for cc = 1:nCurves
     clear node kvloc addkv addnode edge
-    % Calculating the polynomial degree
-    p = length(KV{cc})-length(P{cc}) -1;
     % Start by forming a polygon by linearly interpolating all of the knot
     % spans and their midpoints.
     
     
-    % Building the location knot vector,
+    % Building the location knot vector. This array just contains the
+    % locations of the knots, but no multiplicity information. NURBS2poly
+    % adds a knot to every knot span by default. This has been shown to
+    % produce better meshes in general.
     kvloc = unique(KV{cc});
-    
+    addkv = zeros(1,length(kvloc)-1);
     for kk = 1:length(kvloc)-1;
         addkv(kk) = (kvloc(kk) + kvloc(kk+1))/2;
     end
-    
     kvloc = sort([kvloc,addkv]);
     
     
-    ctr = 1;
-    
+    % Loop through the knot spans and evaluate the NURBS curve at the given
+    % knot locations. These points become the vertices of the polygon.
+    node = zeros(length(kvloc)-1,2);
+    edge = zeros(length(kvloc)-1,2);
+    curveLength = zeros(length(kvloc)-1,1);
+    edgeLength  = zeros(length(kvloc)-1,1);
     for kk = 1:length(kvloc)-1
-        node(ctr,:)  = evalNURBS(P{cc},KV{cc},kvloc(kk));
+        node(kk,:)  = evalNURBS(P{cc},KV{cc},kvloc(kk));
+        edge(kk,:) = [kk kk+1];
+        curveLength(kk) = calcArc(P{cc},KV{cc},[kvloc(kk), kvloc(kk+1)]);
         
-        edge(ctr,:) = [ctr ctr+1];
-        
-        cLength(ctr) = calcArc(P{cc},KV{cc},[kvloc(kk), kvloc(kk+1)]);
-        
-        p1 = node(ctr,:);
+        p1 = node(kk,:);
         p2 = evalNURBS(P{cc},KV{cc},kvloc(kk+1));
-        eLength(ctr) = sqrt(sum((p2-p1).^2));
-        ctr = ctr+1;
-        
-        
+        edgeLength(kk) = sqrt(sum((p2-p1).^2));
     end
-    node(end+1,:) = node(1,:);
+    node(end+1,:) = node(1,:); %#ok<AGROW>
     edge(end)  =1;
-       
-    % Now check to see which edges we need to split.
-    %     thresh = 1.01;
     
-    split = cLength./eLength > thresh;
-    clear addkv addnode
-    while true
+    % Now check to see which edges we need to split.
+    split = curveLength./edgeLength > thresh;
+    
+    maxit = 10; % Maximum number of iterations to allow. 
+    it = 1;
+    while true && it<=maxit
         if any(split)
             idx = find(split);
+            addkv = zeros(1,length(idx));
+            addnode = zeros(length(idx),2);
             % Looping through sides to split.
             
             for ii = 1:length(idx)
@@ -79,9 +81,6 @@ for cc = 1:nCurves
                 edge(p1+1:end+1,:) = edge(p1:end,:)+1;
                 edge(p1,:) = [p1 p1+1];
                 
-                
-                
-                
             end
             augM = [[node;addnode], [kvloc(:);addkv(:)]];
             augM = sortrows(augM,3);
@@ -93,22 +92,26 @@ for cc = 1:nCurves
         else
             break
         end
+        
+        % Calculate the new edge and curve lengths and check again to see
+        % if any edges need to be split. 
+        curveLength = zeros(length(kvloc)-1,1);
+        edgeLength  = zeros(length(kvloc)-1,1);
         for kk = 1:length(kvloc)-1
-            
-            cLength(kk) = calcArc(P{cc},KV{cc},[kvloc(kk), kvloc(kk+1)]);
-            
+            curveLength(kk) = calcArc(P{cc},KV{cc},[kvloc(kk), kvloc(kk+1)]);
             p1 = node(kk,:);
             p2 = node(kk+1,:);
-            eLength(kk) = sqrt(sum((p2-p1).^2));
-            
-            
-            
+            edgeLength(kk) = sqrt(sum((p2-p1).^2));
         end
         
-        split = cLength./eLength > thresh;
-        
+        split = curveLength./edgeLength > thresh;
+        it = it+1;
     end
     
+    if it == 11
+        disp('Warning: The maximum number of iterations for NURBS2Poly was exceeded.')
+        disp('Please email unmeshable geometries to engvall@colorado.edu')
+    end
     
     % Save out the local curve information to the global matrices
     n_el = length(node)-1;

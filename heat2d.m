@@ -1,27 +1,30 @@
-function [NODE,IEN,temp] = heat2d(filename,heatGen,BC)
+function [NODE,IEN,temp] = heat2d(filename,heatGen,BC,D)
 % -----------------------------------------------------------------------------%
-% HEAT2D is a 2-dimensional finite element method solver for analyzing simple
-% heat conduction problems. It reads in a matlab data file that contains the
-% following information:
+% HEAT2D is a finite element solver that uses Galerkin's method for solving
+% simple 2-D steady heat conduction problems.
 
-% NODE: A cell array of the elements in the mesh
-% IEN: The element connectivity array
+% Input:
+% filename: The filename of a gambit neutral file that contains the mesh
+% information and boundary condition flags for the problem geometry.
 
-% heatGen: The internal heat generation
+% heatGen: A matlab function handle giving the internal heat generation as
+% a function of cartesian coordinates (x,y). 
 
-% tempBounds: a 1xn array containing the global node numbers of the nodes with
-% dirichlet boundary conditions.
+% BC: a 1xnBC array containing the values for the boundary conditions on
+% each user specified boundary. Note that currently TriGA can only handle
+% constant boundary conditions. 
 
-% boundTemp: a 1xn array containing the corresponding temperatures
+% D: The material conductivity. Should be a 2x2 matrix. 
 
-% fluxBounds: a nx5 array containing the global number of the element with a side
-% or sides on the global boundary, and a one in the subsequent column if the
-% corresponding face is on  the global boundary.
 
-% boundFlux: an n x n_quad_points x 3 array containing the corresponding fluxes at the
-% quadrature points for a given sides.
+% Output: 
+% NODE: nNodes x 2 array containing the nodes that make up the mesh. 
+% IEN: 10xnel array containing the element connectivity information.
+% temp: nNOdes x 1 sparse array containing the temperature solution at the
+% nodes in NODE. 
 
-% It writes out temperature to 'fileName'.
+% heat2d also appends the temperature solution to <filename>.neu. 
+
 % -----------------------------------------------------------------------------%
 
 % Rational or Bernstein basis functions
@@ -30,8 +33,6 @@ rational = true;
 % Read in the data from the .neu file
 [NODE, IEN, BFLAG] = gambitFileIn(filename);
 BFLAG = BFLAG(BFLAG(:,1)~=0,:);
-% Setting the conductivity matrix.
-D = eye(2);
 
 % Generating a list of nodes that fall on diriclet boundary conditions.
 delem = BFLAG(BFLAG(:,4)==6,:);
@@ -43,11 +44,13 @@ for dd = 1:length(delem)
     addtempBound = [IEN(side10(ss,:),ee),ones(4,1)*BC(delem(dd,3))];
     tempBounds =[tempBounds;addtempBound]; %#ok<AGROW>
 end
-tempBounds = unique(tempBounds,'rows');
+if any(tempBounds(:,1))
+    tempBounds = unique(tempBounds,'rows');
+    boundTemp = tempBounds(:,2);
+    tempBounds =tempBounds(:,1);
+end
 
-boundTemp = tempBounds(:,2);
-tempBounds =tempBounds(:,1);
-
+% Finding the sides that fall on Neumann Boundary Conditions.
 fluxBounds = BFLAG(BFLAG(:,4)==7,:);
 
 
@@ -57,7 +60,7 @@ nen = 10;
 nNodes = length(NODE);
 
 
-% Load the data for the quadrature rule.
+% Load the data for the quadrature rule. 
 [qPts, qPtsb, W, Wb] = quadData(28);
 nQuad   = length(W);
 nbQuad  = length(Wb);
@@ -101,8 +104,9 @@ for ee =1:nel
     
     % Neumann BCs
     % See if the current element lies on a Neumann BC.
-    if find(fluxBounds(:,1) == ee)
-        j = fluxBounds(:,1) == ee;
+    belem = find(fluxBounds(:,1) == ee);
+    for i = 1:length(belem);
+        j = belem(i);
         % Loop through each of the sides on the current element that has a
         % Neumann condition. Most elements will have only one side on the
         % boundary (which will usually be the first side, the one between the
@@ -112,7 +116,7 @@ for ee =1:nel
         % Loop over sides that are on the global boundary.
         for s = 1:3
             if fluxBounds(j,2) == s
-                boundFlux = BC(fluxBounds(j,4));
+                boundFlux = BC(fluxBounds(j,3));
                 % Loop through quadrature points.
                 for nbq = 1:nbQuad
                     
@@ -154,7 +158,7 @@ for ee =1:nel
                 continue
             end
         end
-    end   
+    end
     
     % Assemble k and f to the glabal matrices, K and F.
     for b = 1:nen

@@ -1,40 +1,44 @@
 function [bNode, BFLAG] = meshBoundary(P, KV,bflag,kvloc)
 %---------------------------------meshBoundary---------------------------------%
-% This funciton meshes the boundaries of the domain. It takes as an input a
-% NURBS curve ( in the form of its control points and knot vector) and a
-% user defined number of elements to mesh the edge with. It outputs a series
-% of control nets and nodal points corresponding to one "layer" of
-% triangular elements along the boundary. It also outputs a list of nodes
-% that fall on the outer boundary jsut created (bNode) and a connectivity
-% array of these nodes(bEdge). These are for passing to a third party mesh
-% generator to mesh the interior volume that's away from the edges.
+% MESHBOUNDARY This function is effectively Bezier extraction along the
+% boundary curves. It will perform bezier extraction to create local curves
+% corresponding to each knot span in kvloc.
+%
+%
+% INPUT:
+% P: 1xnCurves cell array with each cell containing the control points for
+% one of the NURBS Curves. 
 
-% This function is effectively Bezier extraction
-
-
-% Inputs:
-% P = control points of the nurbs curve
-% KV = knot vector of the nurbs curve.
-
-% Output
-% B: a 1 x 2*nel cell of control nets
-
-% node:
+% KV: 1xnCurves cell array with each cell containing the knot vector for
+% one of the NURBS Curves. 
+%
+% bflag: 1xnCurves cell array with each cell containing a flag mapping the
+% knot spans of the curve to a certain boundary condition set. 
+%
+% kvloc: 1xnum_boundary_elements+1 array containing information on where to
+% perform bezuier extraction on the NURBS curves. 
+%
+% OUTPUT:
+% bnode: 1xnum_boundary_elements cell array with each cell containing the
+% local control points for the curve obtained by Bezier extraction.
+%
+% BFLAG:  1xnum_boundary_elements array containing the boundary condition
+% set that each respective boundary element belongs to.
+%-------------------------------------------------------------------------%
 
 ctr = 1;
 nCurves = numel(P);
 for cc = 1:nCurves
     kvtmp = kvloc(kvloc>=cc-1 & kvloc<=cc)-(cc-1);
     [bNodeTemp,bflagTemp] = extractCurves(P{cc}, KV{cc},kvtmp);   
+    
     bNode(ctr:ctr+numel(bNodeTemp)-1) = bNodeTemp;
-
     for ii = 1:length(bflagTemp)
-        BFLAG(ctr+ii-1) = bflag{cc}(bflagTemp(ii),2);
+        BFLAG(ctr+ii-1) = bflag{cc}(bflagTemp(ii),2); %#ok<AGROW>
     end
     
     ctr = ctr + numel(bNodeTemp);
 end
-
 
 return
 
@@ -262,20 +266,18 @@ P(:,2) = P(:,2)./P(:,3);
 %-------------------------------------------------------------------------%
 %                         END KNOT INSTERTION
 
-
+% Relaxation factor to account for double precision rounding error. 
 d = 14;
 
+node = cell(n_el,1);
 bb = 1:3:length(P);
-bNode = P(bb(1:end-1),1:2);
 for ee = 1:n_el
     bEdge(ee,:) = [ee,ee+1];
     node{ee} = round(P(bb(ee):bb(ee+1),:)*10^d)/10^d;
 end
 
-bEdge(end,2) = 1;
-
 % Find out which knot span of the original knot vector each element lies
-% on
+% on, and use this data to create bflag.
 KV0 = unique(KV0);
 KVF = unique(KV);
 bb = zeros(n_el,1);
@@ -284,7 +286,6 @@ for kk = 2:length(KV0)
     bsum = cumsum(bb);
     bflag(bsum(kk-1)+1:bsum(kk),1) = ones(bb(kk),1)*(kk-1);
 end
-
 
 return
 

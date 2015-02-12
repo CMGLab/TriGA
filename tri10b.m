@@ -1,26 +1,54 @@
 function [R, J_detb] = tri10b(xi,eta,node,s,varargin)
-%----------------------------------------tri10b---------------------------------%
-% TRI10B is the finite element subroutine for the boundary edge ofa 10 node
-% triangular element. It takes as inputs the list of nodes in physical space, node
-% and the point in isoparametric space at which to evaluate the basis functions,
-% [xi,eta]. It outputs the value of the basis function, R, its derivative with
-% respect to physical coordinates, dR_dx, and the Jacobian determinate of the
-% mapping from isoparametric space to physical space, J_det.
+%-------------------------------------------------------------------------%
+% TRI10B is the finite element subroutine for the edges of a 10 node 
+% triangular element. It uses either Rational Beziers or Bernstein 
+% Polynomials as basis functions over the unit triangle. 
+%
+% INPUT:
+% xi: The xi location (in parametric space) at which to evaluate the basis
+% fucntions.
+%
+% eta: The eta location (in parametric space) at which to evaluate the basis
+% fucntions.
+%
+% node: A 10x3 array that represents the control net for a 10-node Bezier
+% triangle. The first two columns of node give the x and y coordinates of 
+% the nodes in physical space, and the last column gives their 
+% corresponding weights. Node ordering follows the convention below:
+%
+%           3
+%           |\
+%           | \
+%           8  7
+%           |   \
+%   side 3  |    \   side 2
+%           9 10  6
+%           |      \
+%           |       \
+%           1--4--5--2
+%
+%             side 1
+%
+% s: The side of the triangle on which to evaluate the Basis finctions.
+% The side numbering convention is shown above.
+%
+% rational: (optional) If rational == true, rational bezier basis functions
+% will be used. If rational == false, Bernstein polynomial will be used. If
+% no value is specified, tri10 defaults to Rational Beziers. 
+%
+% OUTPUT: 
+% R: A 10x1 array containing the basis functions evaluated at [xi,eta].
+%
+% J_det: The Jacobian determinant of the mapping from parametric space to
+% physical space.
 %------------------------------------------------------------------------------%
 
 if nargin == 4
     rational = true;
-elseif nargin ==r
+elseif nargin == 5
     rational = varargin{1};
 end
 
-if s == 1
-    sn = [ 1 4 5 2];
-elseif s==2
-    sn = [ 2 6 7 3];
-elseif s ==3
-    sn = [ 3 8 9 1];
-end
 % Element parameters.
 n = 3;
 nen = 10;
@@ -113,12 +141,10 @@ if rational
     end
 else
     R = N;
-    dR_du = dN_du;
 end
 
 % Chain rule to find the derivative with respect to cartesian isoparametric
 % coordinates.
-dR_dxi = dR_du*du_dxi;
 dN_dxi = dN_du*du_dxi;
 
 % Calculating the mapping from isoparametric space to physical space.
@@ -142,8 +168,7 @@ dx_dxi = (gp.*h-g.*hp)./h.^2;
 if s == 1
     J_detb = sqrt(sum(dx_dxi(:,1).^2));
 elseif s == 2
-    J_detb = sqrt((dx_dxi(1,1)-dx_dxi(1,2))^2 + (dx_dxi(2,1)-dx_dxi(2,2))^2);
-    
+    J_detb = sqrt((dx_dxi(1,1)-dx_dxi(1,2))^2 + (dx_dxi(2,1)-dx_dxi(2,2))^2);    
 elseif s == 3
     J_detb = sqrt(sum(dx_dxi(:,2).^2));
 end

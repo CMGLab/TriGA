@@ -3,12 +3,12 @@ function [x] = evalNURBS(P,KV,xi)
 % EVALNURBS: This function evaluates a NURBS curve at a given knot
 % location(s) and returns the corresponding coordinates in 2_D physical space.
 
-% Inputs:
+% INPUT:
 % P: nx3 matrix representing the control points of the NURBS Curve in 2-d
 % KV: 1xm vector representing the knot vector of the NURBS curve
 % xi: Nx1 vector of locations at which to evaluate the NURBS curve.
 
-% Output:
+% OUTPUT:
 % x: Nx2 matrix representing the physuical coordinates corresponding to
 % each xi. 
 %------------------------------------------------------------------------------%
