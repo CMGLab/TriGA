@@ -150,8 +150,9 @@ P(:,2) = P(:,2).*P(:,3);
 for i = 1:length(KVF)
     % Check to see if the current knot in KV matches the current knot in
     % KVF. If it does, great, move on to the next knot, if not, calculate
-    % new control points and insert KVF(i) into KV(i).
-    if KVF(i) == KV(i)
+    % new control points and insert KVF(i) into KV(i). DO THIS AS SINGLE
+    % POINT!!!!
+    if single(KVF(i)) == single(KV(i))
         continue
     else
         

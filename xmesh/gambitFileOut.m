@@ -8,7 +8,7 @@ end
 NUMNP = length(NODE);
 NELEM = size(IEN,2);
 NGRPS = 1;
-NBSETS = 1;
+NBSETS = max(BFLAG(:,3));
 NDFCD = 2;
 NDFVL = 2;
 
