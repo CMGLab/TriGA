@@ -41,7 +41,9 @@ L2 = 0;
 H1 = 0;
 [qPts, ~, W, ~]  = quadData(28);
 nQuad = length(W);
+% Generating Lookup Tables for the basis.
 
+[N,dN_du] = evaluateBasis(qPts);
 for ee = 1:nel
      % Generating the local node array. 
     node = NODE(IEN(:,ee),:);
@@ -55,9 +57,9 @@ for ee = 1:nel
     L2square = 0;
     H1square = 0;
     sumU = 0;
-    for q = 1:nQuad
+    for qq = 1:nQuad
         % Find global x location of current quad point
-        [R,dR_dx,x,detJ] = tri10(qPts(q,1),qPts(q,2),node);
+        [R,dR_dx,x,J_det] = tri10fast(node,N(:,qq),dN_du(:,:,qq));
         
         % Evaluate the explicit function at the current quad point.
         u = func(x(1),x(2));
@@ -77,14 +79,14 @@ for ee = 1:nel
             gradUh = gradUh + dR_dx(i,:)*temp(IEN(i,ee));
         end
 
-        L2square = L2square + (u-uh)^2*W(q)/2*detJ;
-        H1square = H1square + sum((gradU-gradUh).^2)*W(q)/2*detJ;
+        L2square = L2square + (u-uh)^2*W(qq)/2*J_det;
+        H1square = H1square + sum((gradU-gradUh).^2)*W(qq)/2*J_det;
         
         sumU = sumU + u;
 
     end
     elemL2(ee) = L2square;
-    elemL2Rel(ee) = L2square/detJ/(sumU/nQuad);
+    elemL2Rel(ee) = L2square/J_det/(sumU/nQuad);
 
 
     L2 = L2 + L2square;

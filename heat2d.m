@@ -38,7 +38,7 @@ BFLAG = BFLAG(BFLAG(:,1)~=0,:);
 delem = BFLAG(BFLAG(:,4)==6,:);
 tempBounds = [];
 side10  = [1 4 5 2; 2 6 7 3; 3 8 9 1];
-for dd = 1:length(delem)
+for dd = 1:size(delem,1)
     ee = delem(dd,1);
     ss = delem(dd,2);
     addtempBound = [IEN(side10(ss,:),ee),ones(4,1)*BC(delem(dd,3))];
@@ -65,6 +65,9 @@ nNodes = length(NODE);
 nQuad   = length(W);
 nbQuad  = length(Wb);
 
+% Generating Lookup Tables for the Bernstein Basis at the quad points.
+[N,dN_du] = evaluateBasis(qPts);
+
 % 2D FEA Sovler
 % Data initalization. Set global stiffness and forcing matrices to 0.
 K(nNodes,nNodes) = sparse(0);
@@ -89,17 +92,17 @@ for ee =1:nel
     
     % Conductivity and heat generation contributions to K and F, respectivly
     % Loop though the quadtrature points.
-    for nq = 1:nQuad
+    for qq = 1:nQuad
         % Call the finite element subroutine to evaluate the basis functions
         % and their derivatives at the current quad point.
-        [R, dR_dx,x, J_det]  = tri10(qPts(nq,1), qPts(nq,2),node,rational);
+        [R, dR_dx,x, J_det]  = tri10fast(node,N(:,qq),dN_du(:,:,qq));
         J_det = abs(J_det);
         
         
         % Add the contribution of the current quad point to the local element
         % stiffness and forcing matrices.
-        k = k + W(nq)*dR_dx*D*dR_dx'*J_det;
-        f = f + W(nq)*heatGen(x(1),x(2))*R*J_det;
+        k = k + W(qq)*dR_dx*D*dR_dx'*J_det;
+        f = f + W(qq)*heatGen(x(1),x(2))*R*J_det;
     end
     
     % Neumann BCs

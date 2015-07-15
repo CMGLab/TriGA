@@ -24,7 +24,7 @@ addpath('xmesh/Mesh2D')
 % diriclet boundary conditions.
 % ------------------------------------------------------------------------%
 
-filename = './plateandhole/plateandhole';
+filename = './plateandhole/plateandholeSmoothed';
 
 % Define the function for the manufactured solution.
 phi = @(x,y) -(1-sqrt(x^2+y^2))*(x+4)*(x-4)*(y+4)*(y-4);
@@ -49,7 +49,7 @@ heat2d(filename,heatGen,BC,D);
 showResults(filename,1/10)
 
 % Calculating the residual.
-nref = 1;
+nref = 2;
 [L2, H1] = calcNorm(filename,phi,gradPhi);
 h = zeros(1,nref+1);
 h(1) = 1;
@@ -90,7 +90,7 @@ title('Convergence for Example 1')
 % No-flux boundary conditions are applied at the ends of the annulus. 
 % ------------------------------------------------------------------------%
 clear
-filename = './quarterannulus/quarterannulus';
+filename = './quarterannulus/quarterannulusSmoothed';
 
 r = @(x,y) sqrt(x^2+y^2);
 phi = @(x,y) -log(r(x,y)/2)/log(2);

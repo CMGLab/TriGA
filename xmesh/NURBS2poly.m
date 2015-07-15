@@ -56,7 +56,6 @@ for cc = 1:nCurves
         edgeLength(kk) = sqrt(sum((p2-p1).^2));
     end
     node(end+1,:) = node(1,:); %#ok<AGROW>
-    edge(end)  =1;
     
     % Now check to see which edges we need to split.
     split = curveLength./edgeLength > thresh;
@@ -87,7 +86,6 @@ for cc = 1:nCurves
             
             node = augM(:,1:2);
             kvloc = augM(:,3);
-            edge(end) = 1;
             
         else
             break
@@ -112,7 +110,8 @@ for cc = 1:nCurves
         disp('Warning: The maximum number of iterations for NURBS2Poly was exceeded.')
         disp('Please email unmeshable geometries to engvall@colorado.edu')
     end
-    
+                edge(end) = 1;
+
     % Save out the local curve information to the global matrices
     n_el = length(node)-1;
     NODE(CTR:CTR+n_el-1,:) = node(1:end-1,:);

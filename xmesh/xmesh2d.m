@@ -37,8 +37,13 @@ clc
 % Input Parser
 [P,KV,bflag,bc] = splineFileIn(filename);
 
+% Normalize the knot vectors to span [0 1]
+for kk = 1:numel(KV)
+   KV{kk} = KV{kk}/KV{kk}(end); 
+end
+
 % Subdividing the inputted NURBS curves into polygons
-thresh = 1.01;
+thresh = 1.002;
 [node,edge,kvloc] = NURBS2poly(P,KV,thresh);
 
 % Feeding the polygons into mesh2d
@@ -50,30 +55,39 @@ thresh = 1.01;
 
 % Go back and create higher order triangles based off of the linears
 % created by mesh2d.
-[node, BFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc);
+[node,linnode,BFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc);
 
 % Generate the global NODE and connectivity arrays.
 [NODE,IEN] = gen_arrays(node);
+[linNODE,~] = gen_arrays(linnode);
 
 % Displaying the mesh.
 if options.output
     showMesh(NODE,IEN);
 end
 
+% Solve a Laplace problem to smooth the weights.  
+smoothNODE = smoothWeights(NODE, IEN, BFLAG);
+smoothNODE = smoothNODE(:,3);
+
+NODE(:,3) = smoothNODE;
 %Write out the mesh to a gambit .neu file.
 gambitFileOut(filename,NODE,IEN,BFLAG)
 return
 
-function [node,BFLAG]= elevateMesh(pts,tri,bNode,bflag,bc)
+function [node,linnode,BFLAG]= elevateMesh(pts,tri,bNode,bflag,bc)
 
 side = [1 2; 2 3; 3 1];
 side10 = [1 4 5 2; 2 6 7 3; 3 8 9 1];
 node = cell(length(tri),1);
+linnode = cell(length(tri),1);
+
 BFLAG = zeros(numel(bNode),4);
 ctr = 1;
 d = 14;
 for ee = 1:length(tri)
     vert = pts(tri(ee,:),:);
+    linnode{ee} = round(gen_net(vert)*10^d)/10^d;
     node{ee} = round(gen_net(vert)*10^d)/10^d;
     %Check to see if the current triangle is a boundary triangle.
     for bb = 1:numel(bNode)
@@ -81,6 +95,7 @@ for ee = 1:length(tri)
             if all(single(node{ee}(side(ss,1),1:2)) == single(bNode{bb}(1,1:2))) && ...
                     all(single(node{ee}(side(ss,2),1:2)) == single(bNode{bb}(4,1:2)));
                 node{ee}(side10(ss,:),:) = bNode{bb};
+                linnode{ee}(side10(ss,:),3) = bNode{bb}(:,3);
                 
                 BFLAG(ctr,1) = ee;
                 BFLAG(ctr,2) = ss;
@@ -90,6 +105,8 @@ for ee = 1:length(tri)
             elseif all(single(node{ee}(side(ss,2),1:2)) == single(bNode{bb}(1,1:2))) && ...
                     all(single(node{ee}(side(ss,1),1:2)) == single(bNode{bb}(4,1:2)));
                 node{ee}(side10(ss,:),:) = flipud(bNode{bb});
+                linnode{ee}(side10(ss,:),3) = flipud(bNode{bb}(:,3));
+
                 BFLAG(ctr,1) = ee;
                 BFLAG(ctr,2) = ss;
                 BFLAG(ctr,3) = bflag(bb);
