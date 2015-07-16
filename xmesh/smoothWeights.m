@@ -58,7 +58,7 @@ for ee =1:nel
     dispFreq = round(nel/100);
     if mod(ee,dispFreq) == 0
         clc
-        fprintf('fea2d is %3.0f percent complete with the assembly process\n',ee/nel*100)
+        fprintf('smoothWeights is %3.0f percent complete with the smoothing process\n',ee/nel*100)
     end
     
     % initialize the local stiffness  matrix

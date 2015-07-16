@@ -35,7 +35,7 @@ addpath('..\Mesh2D')
 clc
 
 % Input Parser
-[P,KV,bflag,bc] = splineFileIn(filename);
+[P,KV,p,bflag,bc] = splineFileIn(filename);
 
 % Normalize the knot vectors to span [0 1]
 for kk = 1:numel(KV)
@@ -55,7 +55,7 @@ thresh = 1.002;
 
 % Go back and create higher order triangles based off of the linears
 % created by mesh2d.
-[node,linnode,BFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc);
+[node,linnode,BFLAG,CFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc,p);
 
 % Generate the global NODE and connectivity arrays.
 [NODE,IEN] = gen_arrays(node);
@@ -72,10 +72,10 @@ smoothNODE = smoothNODE(:,3);
 
 NODE(:,3) = smoothNODE;
 %Write out the mesh to a gambit .neu file.
-gambitFileOut(filename,NODE,IEN,BFLAG)
+gambitFileOut(filename,NODE,IEN,BFLAG,CFLAG)
 return
 
-function [node,linnode,BFLAG]= elevateMesh(pts,tri,bNode,bflag,bc)
+function [node,linnode,BFLAG,CFLAG]= elevateMesh(pts,tri,bNode,bflag,bc,p)
 
 side = [1 2; 2 3; 3 1];
 side10 = [1 4 5 2; 2 6 7 3; 3 8 9 1];
@@ -85,6 +85,9 @@ linnode = cell(length(tri),1);
 BFLAG = zeros(numel(bNode),4);
 ctr = 1;
 d = 14;
+
+% Define CFLAG as a flag if the current element is curved. 
+CFLAG = false(length(tri),1);
 for ee = 1:length(tri)
     vert = pts(tri(ee,:),:);
     linnode{ee} = round(gen_net(vert)*10^d)/10^d;
@@ -99,8 +102,12 @@ for ee = 1:length(tri)
                 
                 BFLAG(ctr,1) = ee;
                 BFLAG(ctr,2) = ss;
-                BFLAG(ctr,3) = bflag(bb);
-                BFLAG(ctr,4) = bc(bflag(bb),2);
+                BFLAG(ctr,3) = bflag(bb,1);
+                BFLAG(ctr,4) = bc(bflag(bb,1),2);
+                
+                if p(bflag(bb,2))>1
+                    CFLAG(ee) = true;
+                end
                 ctr=ctr+1;
             elseif all(single(node{ee}(side(ss,2),1:2)) == single(bNode{bb}(1,1:2))) && ...
                     all(single(node{ee}(side(ss,1),1:2)) == single(bNode{bb}(4,1:2)));
@@ -109,8 +116,12 @@ for ee = 1:length(tri)
 
                 BFLAG(ctr,1) = ee;
                 BFLAG(ctr,2) = ss;
-                BFLAG(ctr,3) = bflag(bb);
-                BFLAG(ctr,4) = bc(bflag(bb),2);
+                BFLAG(ctr,3) = bflag(bb,1);
+                BFLAG(ctr,4) = bc(bflag(bb,1),2);
+                
+                if p(bflag(bb,2))>1
+                    CFLAG(ee) = true;
+                end
                 ctr=ctr+1;
             end
         end
@@ -174,7 +185,7 @@ else
 end
 
 return
-function [P,KV,BFLAG,BC] = splineFileIn(filename)
+function [P,KV,p,BFLAG,BC] = splineFileIn(filename)
 
 filename = [filename,'.spline'];
 fileID = fopen(filename,'r');
@@ -192,13 +203,14 @@ nCurves = dims(1);
 KV = cell(1,nCurves);
 P  = cell(1,nCurves);
 BFLAG = cell(1,nCurves);
+p = zeros(1,nCurves);
 
 for cc = 1:nCurves
     line = fgetl(fileID); %#ok<*NASGU>
     dims = fscanf(fileID,'%u');
     nCP = dims(1);
     lKV = dims(2);
-    p   = dims(3);
+    p(cc)   = dims(3);
     line=fgetl(fileID);
     
     for ii = 1:nCP

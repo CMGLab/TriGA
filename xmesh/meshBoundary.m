@@ -34,7 +34,8 @@ for cc = 1:nCurves
     
     bNode(ctr:ctr+numel(bNodeTemp)-1) = bNodeTemp;
     for ii = 1:length(bflagTemp)
-        BFLAG(ctr+ii-1) = bflag{cc}(bflagTemp(ii),2); %#ok<AGROW>
+        BFLAG(ctr+ii-1,1) = bflag{cc}(bflagTemp(ii),2); 
+        BFLAG(ctr+ii-1,2) = cc; %#ok<*AGROW>
     end
     
     ctr = ctr + numel(bNodeTemp);

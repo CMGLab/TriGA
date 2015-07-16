@@ -1,8 +1,8 @@
-function [] = gambitFileOut(filename,NODE,IEN,BFLAG,varargin)
+function [] = gambitFileOut(filename,NODE,IEN,BFLAG,CFLAG,varargin)
 
-if nargin == 4
+if nargin == 5
     temp = [];
-elseif nargin == 5
+elseif nargin == 6
     temp = varargin{1};
 end
 NUMNP = length(NODE);
@@ -19,6 +19,7 @@ NODE(:,1) = 1:NUMNP;
 IEN(4:13,:) = IEN;
 IEN(1,:) = 1:NELEM;
 IEN(2,:) = 3;
+IEN(2,CFLAG) = -3;
 IEN(3,:) = 10;
 
 % Opening the file.
@@ -44,7 +45,7 @@ fprintf(fileID,'%s \n','ENDOFSECTION');
 
 % Printing out the connectivity information.
 fprintf(fileID,'%s \n','    ELEMENTS/CELLS 1.3.0');
-fprintf(fileID,'%6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u \n',IEN);
+fprintf(fileID,'%6u %6i %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u \n',IEN);
 fprintf(fileID,'%s \n','ENDOFSECTION');
 
 % Printing out the matrial group information. Right now this is trivial as
