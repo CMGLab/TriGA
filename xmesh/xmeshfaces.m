@@ -17,9 +17,8 @@ function [p,t,kvloc,fnum,stats] = xmeshfaces(node,edge,P,KV,kvloc,face,hdata,opt
 %
 % kvloc: The knot locations corresponding to the points in node. 
 %
-% face: [] Right now this is a junk variable as xmesh only handles one
-% face, but capabilities for more than one face should be added in the
-% future. 
+% face: 1xnFaces cell array, whith the ith cell containing the curves that
+% bound the ith face. 
 %
 % hdata: [] Data struct containing user definied sizing data. Right now
 % xmesh doesn't support this, so its also a junk variable. 
@@ -65,9 +64,9 @@ splitFlag = 1;
 
 while splitFlag && it <= maxit
     % Discretise edges
-    [~,~,kvloc, splitFlag] = boundarynodes(qtree.p,qtree.t,qtree.h,node,edge,kvloc,options.output);
+    [~,~,kvloc, splitFlag] = boundarynodes(qtree.p,qtree.t,qtree.h,node,edge(:,1:2),kvloc,options.output);
     
-    % Find where the inserted polygonal node points lie om the actual curve.
+    % Find where the inserted polygonal node points lie on the actual curve.
     % Right now this methoda assumes a linear parameterization and tha each
     % side of the polygon is perfectly bisected. Will need to add
     % capability for boundary smoothing later.
@@ -81,7 +80,7 @@ while splitFlag && it <= maxit
              
         for kk = 1:length(kvtemp)-1
             node(ctr,:)  = evalNURBS(P{cc},KV{cc},kvtemp(kk)); %#ok<*AGROW>
-            edge(ctr,:) = [ctr ctr+1];
+            edge(ctr,:) = [ctr ctr+1 cc];
             ctr = ctr+1;
         end
         edge(ctr-1,2) = cStart;
@@ -102,16 +101,22 @@ pbnd = node;
 % Mesh the connected face defined by node and edge. 
 p = []; t = []; fnum = [];
 
-face{1} = 1:length(pbnd);
-for k = 1:length(face)
+for ff = 1:length(face)
+    
+    % Finding the indices of the edges that bound the ffth face. 
+    nCurves = length(face{ff});
+    fidx = [];
+    for cc = 1:nCurves
+        fidx = [fidx; find(edge(:,3)==face{ff}(cc))];
+    end
     
     % Mesh kth polygon
-    [pnew,tnew] = meshpoly(node,edge(face{k},:),qtree,pbnd,options);
+    [pnew,tnew] = meshpoly(node,edge(fidx,1:2),qtree,pbnd,options);
     
     % Add to global lists
     t = [t; tnew+size(p,1)];
     p = [p; pnew];
-    fnum = [fnum; k*ones(size(tnew,1),1)];
+    fnum = [fnum; ff*ones(size(tnew,1),1)];
     
 end
 

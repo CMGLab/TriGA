@@ -35,7 +35,7 @@ addpath('..\Mesh2D')
 clc
 
 % Input Parser
-[P,KV,p,bflag,bc] = splineFileIn(filename);
+[P,KV,p,bflag,bc,face] = splineFileIn(filename);
 
 % Normalize the knot vectors to span [0 1]
 for kk = 1:numel(KV)
@@ -43,11 +43,11 @@ for kk = 1:numel(KV)
 end
 
 % Subdividing the inputted NURBS curves into polygons
-thresh = 1.002;
+thresh = 1.01;
 [node,edge,kvloc] = NURBS2poly(P,KV,thresh);
 
 % Feeding the polygons into mesh2d
-[pts,tri,kvloc] = xmeshfaces(node,edge,P,KV,kvloc,[],[],options);
+[pts,tri,kvloc] = xmeshfaces(node,edge,P,KV,kvloc,face,[],options);
 
 % Go back and perform knot insertion along the boundary at the locations
 % specified by kvloc.
@@ -185,7 +185,7 @@ else
 end
 
 return
-function [P,KV,p,BFLAG,BC] = splineFileIn(filename)
+function [P,KV,p,BFLAG,BC,FACE] = splineFileIn(filename)
 
 filename = [filename,'.spline'];
 fileID = fopen(filename,'r');
@@ -239,6 +239,27 @@ for bb = 1:NBC
     line = fgetl(fileID);
     BC(bb,:) = sscanf(line,'%u');
     
+end
+
+line = fgetl(fileID);
+
+if line ~= -1
+    fgetl(fileID);
+    
+    line = fgetl(fileID);
+    nFace = sscanf(line,'%u');
+    FACE = cell(1,nFace);
+    for ff = 1:nFace
+        fgetl(fileID);
+        line = fgetl(fileID);
+        nCurve = sscanf(line,'%u');
+        for cc = 1:nCurve
+            line = fgetl(fileID);
+            FACE{ff}(cc) = sscanf(line,'%u');
+        end       
+    end   
+else
+    FACE{1} = 1:nCurves;   
 end
 
 fclose(fileID);
