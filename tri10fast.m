@@ -1,4 +1,4 @@
-function [R, dR_dx,x, J_det] = tri10fast(node,N,dN_du,varargin)
+function [R, dR_dx,x, J_det,dx_dxi] = tri10fast(node,N,dN_du,varargin)
 
 nen = length(N);
 if nargin == 3
