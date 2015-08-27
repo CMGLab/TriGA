@@ -21,8 +21,20 @@ function [NODE,IEN] = xmesh2d(filename,varargin)
 if nargin == 1
     options.output = false;
     options.debug = false;
+    options.smooth = true;
 elseif nargin == 2;
     options = varargin{1};
+    if ~exist('options.output') %#ok<*EXIST>
+        options.output = false;
+    end
+    if ~exist('options.debug')
+        options.debug = false;
+    end
+    if ~exist('options.smooth')
+        options.smooth = true;
+    end
+    
+    
 end
 
 addpath('~/TriGA/xmesh/Mesh2D')
@@ -39,7 +51,7 @@ clc
 
 % Normalize the knot vectors to span [0 1]
 for kk = 1:numel(KV)
-   KV{kk} = KV{kk}/KV{kk}(end); 
+    KV{kk} = KV{kk}/KV{kk}(end);
 end
 
 % Subdividing the inputted NURBS curves into polygons
@@ -66,10 +78,11 @@ if options.output
     showMesh(NODE,IEN);
 end
 
-% Solve a Laplace problem to smooth the weights.  
-smoothNODE = smoothWeights(NODE, IEN, BFLAG);
-smoothNODE = smoothNODE(:,3);
-
+if options.smooth
+    % Solve a Laplace problem to smooth the weights.
+    smoothNODE = smoothWeights(NODE, IEN, BFLAG);
+    smoothNODE = smoothNODE(:,3);
+end
 NODE(:,3) = smoothNODE;
 %Write out the mesh to a gambit .neu file.
 gambitFileOut(filename,NODE,IEN,BFLAG,CFLAG)
@@ -86,7 +99,7 @@ BFLAG = zeros(numel(bNode),4);
 ctr = 1;
 d = 14;
 
-% Define CFLAG as a flag if the current element is curved. 
+% Define CFLAG as a flag if the current element is curved.
 CFLAG = false(length(tri),1);
 for ee = 1:length(tri)
     vert = pts(tri(ee,:),:);
@@ -94,6 +107,8 @@ for ee = 1:length(tri)
     node{ee} = round(gen_net(vert)*10^d)/10^d;
     %Check to see if the current triangle is a boundary triangle.
     for bb = 1:numel(bNode)
+        
+        % Check to see if the triangle has a side on the boundary.
         for ss = 1:3
             if all(single(node{ee}(side(ss,1),1:2)) == single(bNode{bb}(1,1:2))) && ...
                     all(single(node{ee}(side(ss,2),1:2)) == single(bNode{bb}(4,1:2)));
@@ -113,12 +128,25 @@ for ee = 1:length(tri)
                     all(single(node{ee}(side(ss,1),1:2)) == single(bNode{bb}(4,1:2)));
                 node{ee}(side10(ss,:),:) = flipud(bNode{bb});
                 linnode{ee}(side10(ss,:),3) = flipud(bNode{bb}(:,3));
-
+                
                 BFLAG(ctr,1) = ee;
                 BFLAG(ctr,2) = ss;
                 BFLAG(ctr,3) = bflag(bb,1);
                 BFLAG(ctr,4) = bc(bflag(bb,1),2);
                 
+                if p(bflag(bb,2))>1
+                    CFLAG(ee) = true;
+                end
+                ctr=ctr+1;
+            end
+        end
+        
+        % Also check to see if the triangle has a vertex on the boundary.
+        % If it does, it is part of the blending layer, so it needs to be
+        % flagged.
+        for vv = 1:3
+            if single(node{ee}(vv,1:2)) == single(bNode{bb}(1,1:2)) || ...
+                    single(node{ee}(vv,1:2)) == single(bNode{bb}(4,1:2));
                 if p(bflag(bb,2))>1
                     CFLAG(ee) = true;
                 end
@@ -135,7 +163,7 @@ function [node] = gen_net(vert)
 % ----------------------------------gen_net------------------------------------%
 % Generates the control net for the current triangular Bezier patch. Reads in
 % the verticies of a triangle, and linearly interpolates the triangle to make a
-% 10 control point bezier element. 
+% 10 control point bezier element.
 
 % INPUT:
 % vert: a matrix in the form [x1 y1; x2 y2; x3 y3] containing the verticies of a
@@ -148,9 +176,9 @@ function [node] = gen_net(vert)
 %     |    \
 %     v1----v2
 
-% OUTPUT: 
-% node: a 10x3 array containing the control point coordinates and weights. 
-% The standard node ordering is shown below. 
+% OUTPUT:
+% node: a 10x3 array containing the control point coordinates and weights.
+% The standard node ordering is shown below.
 %
 %     3
 %     |\
@@ -167,19 +195,19 @@ function [node] = gen_net(vert)
 
 
 node(:,1:2) = [ vert(1,1:2);...
-         vert(2,1:2);...
-         vert(3,1:2);...
-         vert(1,1:2) + (vert(2,1:2)-vert(1,1:2))/3;...
-         vert(1,1:2) + (vert(2,1:2)-vert(1,1:2))*2/3;...
-         vert(2,1:2) + (vert(3,1:2)-vert(2,1:2))/3;...
-         vert(2,1:2) + (vert(3,1:2)-vert(2,1:2))*2/3;...
-         vert(3,1:2) + (vert(1,1:2)-vert(3,1:2))/3;...
-         vert(3,1:2) + (vert(1,1:2)-vert(3,1:2))*2/3];
-            
+    vert(2,1:2);...
+    vert(3,1:2);...
+    vert(1,1:2) + (vert(2,1:2)-vert(1,1:2))/3;...
+    vert(1,1:2) + (vert(2,1:2)-vert(1,1:2))*2/3;...
+    vert(2,1:2) + (vert(3,1:2)-vert(2,1:2))/3;...
+    vert(2,1:2) + (vert(3,1:2)-vert(2,1:2))*2/3;...
+    vert(3,1:2) + (vert(1,1:2)-vert(3,1:2))/3;...
+    vert(3,1:2) + (vert(1,1:2)-vert(3,1:2))*2/3];
+
 node(10,1:2) = node(9,1:2) + (node(6,1:2)-node(9,1:2))/2;
 if size(vert,2) ==3
-node(4:10,3) = ones(7,1);
-node(1:3,3) = vert(1:3,3);
+    node(4:10,3) = ones(7,1);
+    node(1:3,3) = vert(1:3,3);
 else
     node(:,3) = ones(10,1);
 end
@@ -256,10 +284,10 @@ if line ~= -1
         for cc = 1:nCurve
             line = fgetl(fileID);
             FACE{ff}(cc) = sscanf(line,'%u');
-        end       
-    end   
+        end
+    end
 else
-    FACE{1} = 1:nCurves;   
+    FACE{1} = 1:nCurves;
 end
 
 fclose(fileID);

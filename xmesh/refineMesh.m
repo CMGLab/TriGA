@@ -27,7 +27,7 @@ nel = size(IEN,2);
 % Initializing refined mesh variables.
 node4 = cell(1,nel*4);
 BFLAG4 = zeros(length(BFLAG)*2,4);
-
+CFLAG4 = [];
 % Loop over the elements in the mesh.
 for ee = 1:nel
     
@@ -43,16 +43,21 @@ for ee = 1:nel
         if temp(bb,2) == 1
             BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
             BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
+            CFLAG4 = [CFLAG4; 4*(ee-1)+1; 4*(ee-1)+(1:4)']; %#ok<*AGROW>
         end
         
         if temp(bb,2) == 2
             BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
             BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
+            CFLAG4 = [CFLAG4; 4*(ee-1)+2; 4*(ee-1)+(1:4)'];
+
         end
         
         if temp(bb,2) == 3
             BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
             BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
+            CFLAG4 = [CFLAG4; 4*(ee-1)+(1:4)'];
+
         end
     end
 end
@@ -62,7 +67,7 @@ end
 
 % Write out a gambit file
 filename = [filename,'ref'];
-gambitFileOut(filename,NODE4,IEN4,BFLAG4);
+gambitFileOut(filename,NODE4,IEN4,BFLAG4,CFLAG4);
 
 return
 
