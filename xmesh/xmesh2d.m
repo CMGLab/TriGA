@@ -144,15 +144,15 @@ for ee = 1:length(tri)
         % Also check to see if the triangle has a vertex on the boundary.
         % If it does, it is part of the blending layer, so it needs to be
         % flagged.
-        for vv = 1:3
-            if single(node{ee}(vv,1:2)) == single(bNode{bb}(1,1:2)) || ...
-                    single(node{ee}(vv,1:2)) == single(bNode{bb}(4,1:2));
-                if p(bflag(bb,2))>1
-                    CFLAG(ee) = true;
-                end
-                ctr=ctr+1;
-            end
-        end
+%         for vv = 1:3
+%             if single(node{ee}(vv,1:2)) == single(bNode{bb}(1,1:2)) || ...
+%                     single(node{ee}(vv,1:2)) == single(bNode{bb}(4,1:2));
+%                 if p(bflag(bb,2))>1
+%                     CFLAG(ee) = true;
+%                 end
+%                 ctr=ctr+1;
+%             end
+%         end
         
     end
 end
