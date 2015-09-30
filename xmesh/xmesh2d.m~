@@ -74,7 +74,7 @@ thresh = 1.01;
 % created by mesh2d.
 
 if options.smoothNodes
-    [NODE,IEN,BFLAG,CFLAG] = elevateMeshAndSmooth(pts,tri,bNode);
+    [NODE,IEN,~,~] = elevateMeshAndSmooth(pts,tri,bNode);
     [~,~,BFLAG,CFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc,p);
 else
     [node,linnode,BFLAG,CFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc,p);
