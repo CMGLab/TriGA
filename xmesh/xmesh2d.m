@@ -21,7 +21,9 @@ function [NODE,IEN] = xmesh2d(filename,varargin)
 if nargin == 1
     options.output = false;
     options.debug = false;
-    options.smooth = true;
+    options.smoothWeights = true;
+    options.smoothNodes = false;
+
 elseif nargin == 2;
     options = varargin{1};
     if ~exist('options.output') %#ok<*EXIST>
@@ -30,8 +32,11 @@ elseif nargin == 2;
     if ~exist('options.debug')
         options.debug = false;
     end
-    if ~exist('options.smooth')
-        options.smooth = true;
+    if ~exist('options.smoothWeights')
+        options.smoothWeights = true;
+    end
+    if ~exist('options.smoothNodes')
+        options.smoothNodes = true;
     end
     
     
@@ -67,8 +72,12 @@ thresh = 1.01;
 
 % Go back and create higher order triangles based off of the linears
 % created by mesh2d.
-[node,linnode,BFLAG,CFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc,p);
 
+if options.smoothNodes
+    [node,linnode,BFLAG,CFLAG] = elevateMeshAndSmooth(pts,tri,bNode);
+else
+    [node,linnode,BFLAG,CFLAG] = elevateMesh(pts,tri,bNode,bNodeflag,bc,p);
+end
 % Generate the global NODE and connectivity arrays.
 [NODE,IEN] = gen_arrays(node);
 [linNODE,~] = gen_arrays(linnode);
@@ -78,7 +87,7 @@ if options.output
     showMesh(NODE,IEN);
 end
 
-if options.smooth
+if options.smoothWeights
     % Solve a Laplace problem to smooth the weights.
     smoothNODE = smoothWeights(NODE, IEN, BFLAG);
     smoothNODE = smoothNODE(:,3);
@@ -291,4 +300,192 @@ else
 end
 
 fclose(fileID);
+return
+
+function [NODE, IEN,BFLAG,CFLAG]= elevateMeshAndSmooth(pts,tri,bNode)
+
+side = [1 2; 2 3; 3 1];
+side10 = [1 4 5 2; 2 6 7 3; 3 8 9 1];
+node = cell(length(tri),1);
+
+ctr = 1;
+d = 14;
+
+
+
+
+% Loop through elements in the mesh and elevate locally.
+for ee = 1:length(tri)
+    vert = pts(tri(ee,:),:);
+    node{ee} = round(gen_net(vert)*10^d)/10^d;
+    
+end
+
+% Create the global NODE and IEN arrays from the local arrays.
+addpath('~/TriGA/')
+addpath('~/TriGA/xmesh')
+[NODE, IEN] = gen_arrays(node);
+
+
+bNodeList = [];
+g = zeros(2,max(IEN(:)));
+% Find the displacement boundary conditions.
+for ee = 1:length(IEN)
+    node = NODE(IEN(:,ee),:);
+    %Check to see if the current triangle is a boundary triangle.
+    for bb = 1:numel(bNode)
+        
+        % Check to see if the triangle has a side on the boundary.
+        for ss = 1:3
+            if all(single(node(side(ss,1),1:2)) == single(bNode{bb}(1,1:2))) && ...
+                    all(single(node(side(ss,2),1:2)) == single(bNode{bb}(4,1:2)));
+                
+                ctr=ctr+1;
+                bNodeList = [bNodeList;IEN(side10(ss,:),ee)];
+                gloc = bNode{bb}(:,1:2) - node(side10(ss,:),1:2);
+                
+                g(:,IEN(side10(ss,:),ee)) = gloc';
+            elseif all(single(node(side(ss,2),1:2)) == single(bNode{bb}(1,1:2))) && ...
+                    all(single(node(side(ss,1),1:2)) == single(bNode{bb}(4,1:2)));
+                bNodeList = [bNodeList;IEN(side10(ss,:),ee)];
+                gloc = flipud(bNode{bb}(:,1:2)) - node(side10(ss,:),1:2);
+                g(:,IEN(side10(ss,:),ee)) = gloc';
+
+                ctr=ctr+1;
+            end
+        end
+        
+    end
+end
+
+% Linear elasticty smoothing to make the curvilinear mesh.
+bNodes = unique(bNodeList);
+NODE = LE2d(NODE,IEN,bNodes,g);
+NODE(:,3) = 1;
+
+NODE(:,1:2) = NODE(:,1:2)+g';
+
+% Defining dummy BFLAG and CFLAG variables so this function will play nice 
+% in the TriGA environment. These will need to actaully be computed if this 
+% is found to be worthwhile.
+BFLAG =[];
+CLFAG =[];
+return
+
+function [newNode] = LE2d(NODE, IEN, bNodes,g)
+
+% LE2d solves the 2D linear elasticity equations for the express purpose of
+% calculating mesh deformation. Because of this, it does not account for
+% traction and free boundary conditions. It simply claculates the global
+% stiffness matrix, sets the forcing matric to zero and applies diriclet
+% boundary conditions based on the geometry of the new mesh.
+
+% Quadrature rules
+
+[qPts, ~, w, ~]  = quadData(16);
+nq = length(w);
+
+% Stiffness Properties
+E = 100*10^9;
+nu = .3;
+
+lambda = nu*E/((1+nu)*(1-2*nu));
+mu = E/(2*(1+nu));
+
+D = [lambda + 2*mu, lambda, 0; lambda, lambda + 2*mu, 0; 0 0 mu];
+
+% Mesh/ Geometry information
+nel = length(IEN);
+nen = 10;
+nNodes = max(IEN(:));
+nsd = 2;
+ndof = nsd*(nNodes-length(bNodes));
+nedof = nen*nsd;
+
+%Initialize the global K and F matrices.
+K = zeros(ndof);
+F = zeros(ndof,1);
+
+% Construct the ID array.
+P = 1;
+ID  = zeros(nsd,nNodes);
+for a = 1:nNodes
+    if find(a==bNodes)
+        ID(1,a) = 0;
+        ID(2,a) = 0;
+        
+    else
+        ID(1,a) = P;
+        ID(2,a) = P+1;
+        P = P+2;
+    end
+end
+
+% Generate a lookup table for the basis.
+[N,dN_du] = evaluateBasis(qPts);
+
+% Loop over elements.
+for ee = 1:nel
+    
+    node = NODE(IEN(:,ee),:);
+    
+    % Set the local stiffness matrix to zero.
+    k = zeros(nedof);
+    % Loop over quadrature points to construct k.
+    for qq = 1:nq
+
+        % Construct the B matrix
+        B = zeros(3,nedof);
+        
+        [~, dR_dx,~, J_det] = tri10fast(node,N(:,qq),dN_du(:,:,qq));
+        for a = 1:nen
+            B(:,nsd*(a-1)+(1:2)) = [dR_dx(a,1), 0; ...
+                0, dR_dx(a,2);...
+                dR_dx(a,2), dR_dx(a,1)];
+        end
+        % Add the contributions of the current quad point to the local
+        % stiffness matrix.
+        J_det = abs(J_det);
+        k = k + w(qq)*B'*D*B*J_det;
+    end
+    
+    
+    
+    % Assemble the local element stiffness matrix to the global stiffness
+    % matrix.
+    for a = 1:nen
+        for b = 1:nen
+            for i = 1:nsd
+                for j = 1:nsd
+                    p = (a-1)*nsd+i;
+                    q = (b-1)*nsd+j;
+                    Pa  = ID(i,IEN(a,ee));
+                    Pb  = ID(j,IEN(b,ee));
+                    if Pa ~= 0 && Pb ~= 0
+                        K(Pa,Pb) = K(Pa,Pb) + k(p,q);
+                        
+                    elseif Pa~=0 && Pb ==0
+                        F(Pa) = F(Pa) - k(p,q)*g(j,IEN(b,ee));
+                    end
+                end
+            end
+        end
+    end
+    
+end
+
+% Solve the system
+d = K\F;
+
+newNode = zeros(size(NODE));
+for i = 1:nNodes
+    xidx = ID(1,i);
+    yidx = ID(2,i);
+    if xidx~=0
+        newNode(i,1:2) = NODE(i,1:2) + [d(xidx), d(yidx)];
+    else
+        newNode(i,1:2) = NODE(i,1:2);
+    end
+end
+
 return
