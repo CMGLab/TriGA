@@ -29,6 +29,7 @@ node4 = cell(1,nel*4);
 BFLAG4 = zeros(length(BFLAG)*2,4);
 CFLAG4 = [];
 % Loop over the elements in the mesh.
+ctr = 1;
 for ee = 1:nel
     
     % Generate the local node array, and perform uniform refinement using
@@ -41,23 +42,24 @@ for ee = 1:nel
     for bb = 1:size(temp,1)
         
         if temp(bb,2) == 1
-            BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
-            BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
+            BFLAG4(2*(ctr-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
+            BFLAG4(2*(ctr-1)+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
             CFLAG4 = [CFLAG4; 4*(ee-1)+1; 4*(ee-1)+(1:4)']; %#ok<*AGROW>
+            ctr = ctr+1;
         end
         
         if temp(bb,2) == 2
-            BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
-            BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
+            BFLAG4(2*(ctr-1)+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
+            BFLAG4(2*(ctr-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
             CFLAG4 = [CFLAG4; 4*(ee-1)+2; 4*(ee-1)+(1:4)'];
-
+            ctr = ctr+1;
         end
         
         if temp(bb,2) == 3
-            BFLAG4(2*(ee-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
-            BFLAG4(2*(ee-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
+            BFLAG4(2*(ctr-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
+            BFLAG4(2*(ctr-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
             CFLAG4 = [CFLAG4; 4*(ee-1)+(1:4)'];
-
+            ctr = ctr+1;
         end
     end
 end
