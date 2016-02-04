@@ -1,4 +1,4 @@
-function [NODE,IEN, BFLAG,temp] = gambitFileIn(FileName)
+function [NODE,IEN, BFLAG,CFLAG,temp] = gambitFileIn(FileName)
 
 Fid = fopen([FileName,'.neu'], 'rt');
 
@@ -30,10 +30,14 @@ end
 
 % read element to node connectivity
 IEN = zeros(K, 10);
+CFLAG = false(K,1);
 for k = 1:K
     line   = fgetl(Fid);
     tmpcon = sscanf(line, '%lf');
     IEN(k,:) = tmpcon(4:13);
+    if tmpcon(2)<0 
+        CFLAG(k) = true;
+    end
 end
 
 IEN = IEN';

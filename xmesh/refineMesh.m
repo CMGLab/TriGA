@@ -1,6 +1,6 @@
 function [NODE4,IEN4,BFLAG4] = refineMesh(filename)
 %------------------------------refineMesh---------------------------------%
-% REFINEMESH This function performs mesh refinement by uniform subdivision 
+% REFINEMESH This function performs mesh refinement by uniform subdivision
 % of the triangles in the mesh.
 %
 % INPUT:
@@ -8,18 +8,18 @@ function [NODE4,IEN4,BFLAG4] = refineMesh(filename)
 % information.
 %
 % OUTPUT:
-% NODE4: The global node list of the refined mesh. 
+% NODE4: The global node list of the refined mesh.
 %
-% IEN4 : THe connectivity information for the refined mesh. 
+% IEN4 : THe connectivity information for the refined mesh.
 %
-% BFLAG4: The Boundary condition information for the refined mesh. 
+% BFLAG4: The Boundary condition information for the refined mesh.
 %
 % filenameref: refineMesh also writes out all the above information to a
-% new gambit neutral file with "ref" appended to the filename. 
+% new gambit neutral file with "ref" appended to the filename.
 %-------------------------------------------------------------------------%
 
 % Reading in the data file.
-[NODE,IEN, BFLAG] = gambitFileIn(filename);
+[NODE,IEN, BFLAG,CFLAG] = gambitFileIn(filename);
 
 % Setting global mesh data.
 nel = size(IEN,2);
@@ -36,7 +36,7 @@ for ee = 1:nel
     % refine Triange.
     node = NODE(IEN(:,ee),:);
     node4(4*(ee-1)+(1:4)) = refineTriangle(node);
-
+    
     % Update the boundary condition matrix.
     temp  = BFLAG(BFLAG(:,1)==ee,:);
     for bb = 1:size(temp,1)
@@ -44,24 +44,26 @@ for ee = 1:nel
         if temp(bb,2) == 1
             BFLAG4(2*(ctr-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
             BFLAG4(2*(ctr-1)+2,:) = [4*(ee-1)+2 temp(bb,2:4)];
-            CFLAG4 = [CFLAG4; 4*(ee-1)+1; 4*(ee-1)+(1:4)']; %#ok<*AGROW>
             ctr = ctr+1;
         end
         
         if temp(bb,2) == 2
             BFLAG4(2*(ctr-1)+1,:) = [4*(ee-1)+2 temp(bb,2:4)];
             BFLAG4(2*(ctr-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
-            CFLAG4 = [CFLAG4; 4*(ee-1)+2; 4*(ee-1)+(1:4)'];
             ctr = ctr+1;
         end
         
         if temp(bb,2) == 3
             BFLAG4(2*(ctr-1)+1,:) = [4*(ee-1)+1 temp(bb,2:4)];
             BFLAG4(2*(ctr-1)+2,:) = [4*(ee-1)+3 temp(bb,2:4)];
-            CFLAG4 = [CFLAG4; 4*(ee-1)+(1:4)'];
             ctr = ctr+1;
         end
     end
+    
+    if CFLAG(ee)
+        CFLAG4 = [CFLAG4; 4*(ee-1)+(1:4)'];
+    end
+    
 end
 
 % Generate the global NODE and IEN arrays from the local node arrays.
@@ -146,7 +148,7 @@ return
 
 function [R] = tri10Bern(xi,eta)
 %----------------------------------------tri10---------------------------------%
-% TRI10BERN calculate the bernstein polynomials over the unit triangle. 
+% TRI10BERN calculate the bernstein polynomials over the unit triangle.
 %
 % INPUT:
 % xi: The xi location (in parametric space) at which to evaluate the basis
@@ -155,7 +157,7 @@ function [R] = tri10Bern(xi,eta)
 % eta: The eta location (in parametric space) at which to evaluate the basis
 % functions.
 %
-% OUTPUT: 
+% OUTPUT:
 % R: A 10x1 array containing the basis functions evaluated at [xi,eta].
 %------------------------------------------------------------------------------%
 % Element parameters.
@@ -197,7 +199,7 @@ tuples  = [ 3 0 0;...
     1 1 1];
 
 % Loop through the control points.
-for nn = 1:nen    
+for nn = 1:nen
     i = tuples(nn,1);
     j = tuples(nn,2);
     k = tuples(nn,3);
@@ -205,7 +207,7 @@ for nn = 1:nen
     % From page 141 of Bezier and B-splines. Calculate the ith basis function
     % its derivative with respect to barycentric coordinates.
     R(nn) = factorial(n)/...
-        (factorial(i)*factorial(j)*factorial(k))*u^i*v^j*w^k;    
+        (factorial(i)*factorial(j)*factorial(k))*u^i*v^j*w^k;
 end
 
 return

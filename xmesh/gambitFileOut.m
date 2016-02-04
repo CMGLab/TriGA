@@ -7,8 +7,14 @@ elseif nargin == 6
 end
 NUMNP = length(NODE);
 NELEM = size(IEN,2);
+MAXNODE  = size(IEN,1);
 NGRPS = 1;
-NBSETS = max(BFLAG(:,3));
+
+if any(BFLAG)
+    NBSETS = max(BFLAG(:,3));
+else
+    NBSETS = 0;
+end
 NDFCD = 2;
 NDFVL = 2;
 
@@ -16,11 +22,27 @@ NDFVL = 2;
 NODE(:,2:4) = NODE;
 NODE(:,1) = 1:NUMNP;
 
-IEN(4:13,:) = IEN;
+% Loop over columns in IEN and find the number of non-zeros in each column.
+% This is for mixed meshes, where there can be quads or tris.
+
+elemType = zeros(1,NELEM);
+nnz = zeros(1,NELEM);
+for ee = 1:NELEM
+    nnz(ee) = sum(IEN(:,ee)>0);
+    
+    if nnz(ee) == 3 || nnz(ee) == 6 || nnz(ee) == 10
+        elemType(ee) = 3;
+    elseif nnz(ee) == 4 || nnz(ee) == 9 || nnz(ee) == 16
+        elemType(ee) = 2;
+    end
+    
+end
+
+IEN(3+(1:MAXNODE),:) = IEN;
 IEN(1,:) = 1:NELEM;
-IEN(2,:) = 3;
-IEN(2,CFLAG) = -3;
-IEN(3,:) = 10;
+IEN(2,:) = elemType;
+IEN(2,CFLAG) = -IEN(2,CFLAG); % Flag curved elements by a negative sign.
+IEN(3,:) = nnz; % Setting how many nodes define the eeth element.
 
 % Opening the file.
 filename = [filename,'.neu'];
@@ -45,7 +67,13 @@ fprintf(fileID,'%s \n','ENDOFSECTION');
 
 % Printing out the connectivity information.
 fprintf(fileID,'%s \n','    ELEMENTS/CELLS 1.3.0');
-fprintf(fileID,'%6u %6i %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u \n',IEN);
+for ee = 1:NELEM
+    fprintf(fileID,'%6u %6i %6u',IEN(1:3,ee));
+    for nn = 1:nnz(ee)
+        fprintf(fileID,'%6u',IEN(nn+3,ee));
+    end
+    fprintf(fileID,'\n');  
+end
 fprintf(fileID,'%s \n','ENDOFSECTION');
 
 % Printing out the matrial group information. Right now this is trivial as
@@ -77,13 +105,13 @@ if any(BFLAG)
         else
             disp('Error: Invalid boundary condition type specified')
         end
-        bctemp = [BFLAG(BFLAG(:,3)==bb,1) ones(NENTRY,1)*3 BFLAG(BFLAG(:,3)==bb,2) zeros(NENTRY,1)]'; 
+        bctemp = [BFLAG(BFLAG(:,3)==bb,1) ones(NENTRY,1)*3 BFLAG(BFLAG(:,3)==bb,2) zeros(NENTRY,1)]';
         
         fprintf(fileID,'%s \n',' BOUNDARY CONDITIONS 1.3.0');
         fprintf(fileID,'%20s %4u %4u %4u  %4u \n',BCTYPE,ITYPE, NENTRY, NVALUES,IBCODE);
         fprintf(fileID,'%4u %4u %4u %4u \n',bctemp);
         fprintf(fileID,'%s \n','ENDOFSECTION');
-    end    
+    end
 end
 
 if any(temp)

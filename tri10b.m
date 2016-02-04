@@ -1,4 +1,4 @@
-function [R, J_detb] = tri10b(xi,eta,node,s,varargin)
+ function [R, J_detb] = tri10b(xi,eta,node,s,varargin)
 %-------------------------------------------------------------------------%
 % TRI10B is the finite element subroutine for the edges of a 10 node 
 % triangular element. It uses either Rational Beziers or Bernstein 
