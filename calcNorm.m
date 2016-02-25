@@ -30,7 +30,7 @@ function [L2, H1, elemL2,elemL2Rel] =calcNorm(filename,func,gradFunc)
 % ---------------------------------------------------------------------------- %
 
 % Reading in the problem data. 
-[NODE,IEN,~,temp] = gambitFileIn(filename);
+[NODE,IEN,~,~,temp] = gambitFileIn(filename);
 
 % Initializing variables. 
 nel = size(IEN,2); 

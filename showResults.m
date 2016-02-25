@@ -18,7 +18,7 @@ elseif nargin == 2
     h = varargin{1};
 end
 
-[NODE,IEN,~,temp] = gambitFileIn(filename);
+[NODE,IEN,~,~,temp] = gambitFileIn(filename);
 
 nel = size(IEN,2);
 idx = [1 1; 4 1; 1 4; 2 1; 3 1; 3 2; 2 3; 1 3; 1 2; 2 2];

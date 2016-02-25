@@ -31,7 +31,7 @@ function [NODE,IEN,temp] = heat2d(filename,heatGen,BC,D)
 rational = true;
 
 % Read in the data from the .neu file
-[NODE, IEN, BFLAG] = gambitFileIn(filename);
+[NODE, IEN, BFLAG, CFLAG] = gambitFileIn(filename);
 BFLAG = BFLAG(BFLAG(:,1)~=0,:);
 
 % Generating a list of nodes that fall on diriclet boundary conditions.
@@ -201,6 +201,6 @@ disp('Solving the System...')
 % Solve the system.
 temp = K\F;
 
-gambitFileOut(filename,NODE,IEN,BFLAG,temp)
+gambitFileOut(filename,NODE,IEN,BFLAG,CFLAG,temp)
 disp('Done')
 return
