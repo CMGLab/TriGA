@@ -36,24 +36,23 @@ for ee = 1:nel
     % Generate the local node array, and perform uniform refinement using
     % refine Triange.
     node = NODE(IEN(:,ee),:);
-%     if ee == 43943
-%         node_first = node;
-%     end
-%     if ee == 43944
-%         node_second = node;
-%         keyboard
-%     end
+    if ee == 43943
+        node_first = node;
+    end
+    if ee == 43944
+        node_second = node;
+        keyboard
+    end
     
     node4(4*(ee-1)+(1:4)) = refineTriangle(node);
     
-%     if ee == 43943
-%         node_first2 = node4(4*(ee-1)+(1:4));
-%         keyboard
-%     end
-%     if ee == 43944
-%         node_second2 = node4(4*(ee-1)+(1:4));
-%         keyboard
-%     end
+     if ee == 43943
+        node_first2 = node4(4*(ee-1)+(1:4));
+    end
+    if ee == 43944
+        node_second2 = node4(4*(ee-1)+(1:4));
+        keyboard
+    end
     
     
     % Update the boundary condition matrix.

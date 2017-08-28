@@ -68,9 +68,9 @@ fprintf(fileID,'%s \n','ENDOFSECTION');
 % Printing out the connectivity information.
 fprintf(fileID,'%s \n','    ELEMENTS/CELLS 1.3.0');
 for ee = 1:NELEM
-    fprintf(fileID,'%6u %6i %6u',IEN(1:3,ee));
+    fprintf(fileID,'%11u %11i %11u',IEN(1:3,ee));
     for nn = 1:nnz(ee)
-        fprintf(fileID,'%6u',IEN(nn+3,ee));
+        fprintf(fileID,'%11u',IEN(nn+3,ee));
     end
     fprintf(fileID,'\n');  
 end
@@ -82,8 +82,8 @@ fprintf(fileID,'%s \n','ENDOFSECTION');
 fprintf(fileID,'%s \n','    ELEMENT GROUP 1.3.0');
 fprintf(fileID,'%s %11.0u %s %11.0u %s %11.0u %s %11.0f \n','GROUP:',1,' ELEMENTS', NELEM, ' MATERIAL:',4,' NFLAGS:',0);
 fprintf(fileID, '%s %7.4f \n','                epsilon:',1);
-fprintf(fileID, '%8.0f \n' , 0);
-fprintf(fileID, '%8.0u %8.0u %8.0u %8.0u %8.0u %8.0u %8.0u %8.0u %8.0u %8.0u \n',1:NELEM);
+fprintf(fileID, '%11.0f \n' , 0);
+fprintf(fileID, '%11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %1.0u %11.0u %11.0u \n',1:NELEM);
 
 if mod(NELEM,10)
     fprintf(fileID, '\n');
@@ -108,8 +108,8 @@ if any(BFLAG)
         bctemp = [BFLAG(BFLAG(:,3)==bb,1) ones(NENTRY,1)*3 BFLAG(BFLAG(:,3)==bb,2) zeros(NENTRY,1)]';
         
         fprintf(fileID,'%s \n',' BOUNDARY CONDITIONS 1.3.0');
-        fprintf(fileID,'%20s %4u %4u %4u  %4u \n',BCTYPE,ITYPE, NENTRY, NVALUES,IBCODE);
-        fprintf(fileID,'%4u %4u %4u %4u \n',bctemp);
+        fprintf(fileID,'%20s %11u %11u %11u  %11u \n',BCTYPE,ITYPE, NENTRY, NVALUES,IBCODE);
+        fprintf(fileID,'%11u %11u %11u %11u \n',bctemp);
         fprintf(fileID,'%s \n','ENDOFSECTION');
     end
 end
@@ -117,9 +117,9 @@ end
 if any(temp)
     temp = [(1:length(temp))' full(temp)]';
     fprintf(fileID,'%20s \n','TIMESTEPDATA  1.3.0');
-    fprintf(fileID,'%s %5u %s %5u %s %5u \n','TIMESTEP: ',1,' TIME:   ',0,' INCRMNT:   ',0);
-    fprintf(fileID,'%20s %5u % 5u %5u \n','TEMPERATURE',0,0,1);
-    fprintf(fileID,'%10u %23.15f \n',temp);
+    fprintf(fileID,'%s %11u %s %11u %s %11u \n','TIMESTEP: ',1,' TIME:   ',0,' INCRMNT:   ',0);
+    fprintf(fileID,'%20s %11u % 11u %11u \n','TEMPERATURE',0,0,1);
+    fprintf(fileID,'%11u %23.15f \n',temp);
     fprintf(fileID,'%s \n','ENDOFTIMESTEP');
 end
 

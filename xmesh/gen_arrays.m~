@@ -22,25 +22,18 @@ allNodes = zeros(nen*nel,5);
 
 % Concatenating all of the local nodes into one large array.
 for ee = 1:nel  
-%    if ee == 43943
-%        keyboard
-%    end
+   if ee == 43943
+       keyboard
+   end
     allNodes(ctr:ctr+nen-1, :) = [node{ee}(:,1:3) , ones(nen,1)*ee, [1:nen]'];
     ctr=ctr+nen;
 end
 
 % Number of decimal places to allow.
-d = 14*3;
-
-%allNodes = [round(allNodes(:,1:2)*10^d) allNodes];
-
-%[xy_round] = int64(round(allNodes(:,1:2)*2^d));
-%[xy_sorted,permutation] = sortrows([xy_round],[1,2]);
-[~, allNodes] = sort_perm_matrix( allNodes );
-%allNodes = allNodes(permutation,:);
-
-%allNodes = sortrows(allNodes,[1,2]);
-%allNodes = allNodes(:,3:end);
+d = 14;
+allNodes = [round(allNodes(:,1:2)*10^d)/(10^d) allNodes];
+allNodes = sortrows(allNodes,[1,2]);
+allNodes = allNodes(:,3:end);
 
 % Pre-allocating the NODE and IEN arrays
 IEN = zeros(nen,nel);
@@ -50,6 +43,7 @@ e = allNodes(1,4);
 % Local node number
 n = allNodes(1,5);
 IEN(n,e) = 1;
+
 
 ctr = 1;
 disp('Generating the connectivity and global node matrices');
@@ -61,14 +55,8 @@ for i  = 2:length(allNodes)
     % Local node number
     n = allNodes(i,5);
     
- %if round(allNodes(i,1)*2^d) == round(allNodes(i-1,1)*2^d) && ...
- %           round(allNodes(i,2)*2^d) == round(allNodes(i-1,2)*2^d)
-        
- if abs(allNodes(i,1) - allNodes(i-1,1)) < max( abs(allNodes(i,1)), abs(allNodes(i-1,1)))*100*eps()+100*realmin && ...
-         abs(allNodes(i,2) - allNodes(i-1,2)) < max( abs(allNodes(i,2)), abs(allNodes(i-1,2)))*100*eps()+100*realmin()
-     
-
-       %keyboard
+ if round(allNodes(i,1)*10^d) == round(allNodes(i-1,1)*10^d) && ...
+            round(allNodes(i,2)*10^d) == round(allNodes(i-1,2)*10^d)
         
     e0 = allNodes(i-1,4);
     n0 = allNodes(i-1,5);
@@ -85,19 +73,4 @@ for i  = 2:length(allNodes)
 end
 
 NODE = NODE(1:ctr,:);
-
-for i  = 2:ctr
-    for j = 1:i-1
-        tt = true;
-        for k = 1:2
-            if abs(NODE(i,k) - NODE(j,k)) > max( abs(NODE(i,k)), abs(NODE(j,k)))*10*eps()
-                tt=false;     
-            end
-        end
-        if tt==true
-            keyboard
-        end
-    end
-end
-
 return
