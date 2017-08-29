@@ -1,4 +1,4 @@
-function [permutation_matrix, sorted_array] = sort_perm_matrix( array )
+function [permutation_matrix, sorted_array] = sort_perm_matrix( array, tol )
 
 [sorted_array,permutation_matrix] = sortrows(array,1);
 
@@ -9,7 +9,7 @@ for i=2:size(sorted_array,1)
     
     i
      
-    if abs(old_x - sorted_array(i,1)) < max( abs(sorted_array(i,1)), old_x)*100*eps()+100*realmin()
+    if abs(old_x - sorted_array(i,1)) < max( abs(sorted_array(i,1)), old_x)*tol*eps()+tol*realmin()
        
         cnt = cnt+1;
     else % different than previous

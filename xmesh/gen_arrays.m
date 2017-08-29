@@ -33,10 +33,10 @@ end
 d = 14*3;
 
 %allNodes = [round(allNodes(:,1:2)*10^d) allNodes];
-
+tol = 1000;
 %[xy_round] = int64(round(allNodes(:,1:2)*2^d));
 %[xy_sorted,permutation] = sortrows([xy_round],[1,2]);
-[~, allNodes] = sort_perm_matrix( allNodes );
+[~, allNodes] = sort_perm_matrix( allNodes, tol );
 %allNodes = allNodes(permutation,:);
 
 %allNodes = sortrows(allNodes,[1,2]);
