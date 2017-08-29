@@ -64,8 +64,8 @@ for i  = 2:length(allNodes)
  %if round(allNodes(i,1)*2^d) == round(allNodes(i-1,1)*2^d) && ...
  %           round(allNodes(i,2)*2^d) == round(allNodes(i-1,2)*2^d)
         
- if abs(allNodes(i,1) - allNodes(i-1,1)) < max( abs(allNodes(i,1)), abs(allNodes(i-1,1)))*100*eps()+100*realmin && ...
-         abs(allNodes(i,2) - allNodes(i-1,2)) < max( abs(allNodes(i,2)), abs(allNodes(i-1,2)))*100*eps()+100*realmin()
+ if abs(allNodes(i,1) - allNodes(i-1,1)) < max( abs(allNodes(i,1)), abs(allNodes(i-1,1)))*tol*eps()+tol*realmin && ...
+         abs(allNodes(i,2) - allNodes(i-1,2)) < max( abs(allNodes(i,2)), abs(allNodes(i-1,2)))*tol*eps()+tol*realmin()
      
 
        %keyboard
