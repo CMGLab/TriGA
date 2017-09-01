@@ -56,19 +56,19 @@ fprintf(fileID,'%s \n','gambitFileOut(/TriGA)');
 fprintf(fileID,'%s \n','WinUSEMe beta version August 2002');
 
 % Printing out global mesh information.
-fprintf(fileID,'%11s %10s %10s %10s %10s %10s \n','NUMNP','NELEM','NGRPS','NBSETS','NDFCD','NDFVL');
-fprintf(fileID,'%11u %10u %10u %10u %10u %10u \n',NUMNP,NELEM,NGRPS,NBSETS,NDFCD,NDFVL);
+fprintf(fileID,'%15s %15s %15s %15s %15s %15s \n','NUMNP','NELEM','NGRPS','NBSETS','NDFCD','NDFVL');
+fprintf(fileID,'%11u %11u %11u %11u %11u %11u \n',NUMNP,NELEM,NGRPS,NBSETS,NDFCD,NDFVL);
 fprintf(fileID,'%s \n','ENDOFSECTION');
 
 % Printing out the nodal Coordinates
 fprintf(fileID,'%s \n','   NODAL COORDINATES 1.3.0');
-fprintf(fileID,'%15.10f %20.15f %20.15f %20.15f \n',NODE');
+fprintf(fileID,'%11u %20.15e %20.15e %20.15e \n',NODE');
 fprintf(fileID,'%s \n','ENDOFSECTION');
 
 % Printing out the connectivity information.
 fprintf(fileID,'%s \n','    ELEMENTS/CELLS 1.3.0');
 for ee = 1:NELEM
-    fprintf(fileID,'%11u %11i %11u',IEN(1:3,ee));
+    fprintf(fileID,'%11u %5i %11u',IEN(1:3,ee));
     for nn = 1:nnz(ee)
         fprintf(fileID,'%11u',IEN(nn+3,ee));
     end
@@ -82,8 +82,8 @@ fprintf(fileID,'%s \n','ENDOFSECTION');
 fprintf(fileID,'%s \n','    ELEMENT GROUP 1.3.0');
 fprintf(fileID,'%s %11.0u %s %11.0u %s %11.0u %s %11.0f \n','GROUP:',1,' ELEMENTS', NELEM, ' MATERIAL:',4,' NFLAGS:',0);
 fprintf(fileID, '%s %7.4f \n','                epsilon:',1);
-fprintf(fileID, '%11.0f \n' , 0);
-fprintf(fileID, '%11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %1.0u %11.0u %11.0u \n',1:NELEM);
+fprintf(fileID, '%15.0f \n' , 0);
+fprintf(fileID, '%11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %11.0u %11.0u \n',1:NELEM);
 
 if mod(NELEM,10)
     fprintf(fileID, '\n');
@@ -119,7 +119,7 @@ if any(temp)
     fprintf(fileID,'%20s \n','TIMESTEPDATA  1.3.0');
     fprintf(fileID,'%s %11u %s %11u %s %11u \n','TIMESTEP: ',1,' TIME:   ',0,' INCRMNT:   ',0);
     fprintf(fileID,'%20s %11u % 11u %11u \n','TEMPERATURE',0,0,1);
-    fprintf(fileID,'%11u %23.15f \n',temp);
+    fprintf(fileID,'%11u %23.15e \n',temp);
     fprintf(fileID,'%s \n','ENDOFTIMESTEP');
 end
 

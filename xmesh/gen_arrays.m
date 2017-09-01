@@ -34,9 +34,11 @@ d = 14*3;
 
 %allNodes = [round(allNodes(:,1:2)*10^d) allNodes];
 tol = 1000;
+xtol = max(abs(allNodes(:,1)))*tol*eps();
+ytol = max(abs(allNodes(:,2)))*tol*eps();
 %[xy_round] = int64(round(allNodes(:,1:2)*2^d));
 %[xy_sorted,permutation] = sortrows([xy_round],[1,2]);
-[~, allNodes] = sort_perm_matrix( allNodes, tol );
+[~, allNodes] = sort_perm_matrix( allNodes, xtol, ytol);
 %allNodes = allNodes(permutation,:);
 
 %allNodes = sortrows(allNodes,[1,2]);
@@ -64,40 +66,45 @@ for i  = 2:length(allNodes)
  %if round(allNodes(i,1)*2^d) == round(allNodes(i-1,1)*2^d) && ...
  %           round(allNodes(i,2)*2^d) == round(allNodes(i-1,2)*2^d)
         
- if abs(allNodes(i,1) - allNodes(i-1,1)) < max( abs(allNodes(i,1)), abs(allNodes(i-1,1)))*tol*eps()+tol*realmin && ...
-         abs(allNodes(i,2) - allNodes(i-1,2)) < max( abs(allNodes(i,2)), abs(allNodes(i-1,2)))*tol*eps()+tol*realmin()
+ if abs(allNodes(i,1) - allNodes(i-1,1)) < xtol && abs(allNodes(i,2) - allNodes(i-1,2)) < ytol
      
-
        %keyboard
         
     e0 = allNodes(i-1,4);
     n0 = allNodes(i-1,5);
      IEN(n,e) = IEN(n0,e0);
-    if single(allNodes(i,3))~=1
-        NODE(ctr,3) = allNodes(i,3);
-    end
+     if single(allNodes(i,3))~=1.0
+         NODE(ctr,3) = allNodes(i,3);
+     else
+         NODE(ctr,3) = 1.0;
+     end
  else
      ctr = ctr+1;
-     NODE(ctr,:) = allNodes(i,1:3);
+     if single(allNodes(i,3))~=1.0
+         NODE(ctr,3) = allNodes(i,3);
+     else
+         NODE(ctr,3) = 1.0;
+     end
+     NODE(ctr,1:2) = allNodes(i,1:2);
      IEN(n,e) = ctr;
  end
 
 end
 
 NODE = NODE(1:ctr,:);
-
-for i  = 2:ctr
-    for j = 1:i-1
-        tt = true;
-        for k = 1:2
-            if abs(NODE(i,k) - NODE(j,k)) > max( abs(NODE(i,k)), abs(NODE(j,k)))*10*eps()
-                tt=false;     
-            end
-        end
-        if tt==true
-            keyboard
-        end
-    end
-end
+% 
+% for i  = 2:ctr
+%     for j = 1:i-1
+%         tt = true;
+%         for k = 1:2
+%             if abs(NODE(i,k) - NODE(j,k)) > max( abs(NODE(i,k)), abs(NODE(j,k)))*10*eps()
+%                 tt=false;     
+%             end
+%         end
+%         if tt==true
+%             keyboard
+%         end
+%     end
+% end
 
 return

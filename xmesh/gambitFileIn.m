@@ -140,7 +140,7 @@ line = fgetl(Fid);line = fgetl(Fid);
 temp = zeros(size(NODE,1),1);
 if line ~= -1
     for i = 1:Nv
-        val = sscanf(line,'%f');
+        val = sscanf(line,'%e');
         temp(i)  = val(2);
         line = fgetl(Fid);
     end
