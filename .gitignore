@@ -1,1 +1,8 @@
+# Ignore all gambit neutral files.
 *.neu
+
+# Ignore all Emacs auto-save files.
+*~
+
+# Ignore the DS_Store file
+*.DS_Store
